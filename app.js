@@ -149,6 +149,7 @@ function renderApp() {
 
     <!-- Sidebar -->
     <nav id="sidebar">
+      <div class="nav-indicator" id="nav-indicator" style="opacity:0;top:0"></div>
       <span class="nav-section-label">Navigation</span>
       <button class="nav-item active" data-nav="library" onclick="UI.navTo('library')">
         ${iconGrid()} Bibliothèque <span class="nav-badge" id="badge-all">—</span>
@@ -262,6 +263,19 @@ function renderApp() {
 
 // ── Chargement depuis Supabase ───────────────────────────────
 async function loadEntries() {
+  // Show skeletons while loading
+  const grid = document.getElementById("cards-grid");
+  if (grid && !State.entries.length) {
+    grid.innerHTML = Array(8).fill(0).map(() => `
+      <div class="skeleton-card">
+        <div class="skeleton skeleton-cover"></div>
+        <div class="skeleton-body">
+          <div class="skeleton skeleton-line"></div>
+          <div class="skeleton skeleton-line short"></div>
+          <div class="skeleton skeleton-line xshort"></div>
+        </div>
+      </div>`).join("");
+  }
   try {
     // Charge tout, le filtrage se fait localement dans filterEntries()
     State.entries = await Media.getAll({});
@@ -282,7 +296,15 @@ function navTo(key) {
   // Désactive tous les nav-items
   document.querySelectorAll(".nav-item[data-nav]").forEach(b => b.classList.remove("active"));
   const btn = document.querySelector(`.nav-item[data-nav="${key}"]`);
-  if (btn) btn.classList.add("active");
+  if (btn) {
+    btn.classList.add("active");
+    // Glide indicator
+    const indicator = document.getElementById("nav-indicator");
+    if (indicator) {
+      indicator.style.top  = btn.offsetTop + "px";
+      indicator.style.opacity = "1";
+    }
+  }
 
   // Sauvegarde la nav active
   localStorage.setItem("kulturo-nav", key);
@@ -401,7 +423,17 @@ function cardHTML(e) {
 // ── Badges sidebar ────────────────────────────────────────────
 function updateBadges() {
   const count = (fn) => State.entries.filter(fn).length;
-  const set   = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n; };
+  const set   = (id, n) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const old = el.textContent;
+    el.textContent = n;
+    if (String(old) !== String(n)) {
+      el.classList.remove("bounce");
+      requestAnimationFrame(() => el.classList.add("bounce"));
+      el.addEventListener("animationend", () => el.classList.remove("bounce"), { once: true });
+    }
+  };
   set("badge-all",     State.entries.length);
   set("badge-game",    count(e => e.media_type === "game"));
   set("badge-movie",   count(e => e.media_type === "movie"));
@@ -775,6 +807,13 @@ async function deleteEntry(id) {
 }
 
 async function toggleFav(id) {
+  // Anime le bouton fav
+  const btn = document.querySelector(`.fav-btn[onclick*="${id}"]`);
+  if (btn) {
+    btn.classList.remove("pop");
+    requestAnimationFrame(() => btn.classList.add("pop"));
+    btn.addEventListener("animationend", () => btn.classList.remove("pop"), { once: true });
+  }
   const entry = State.entries.find(e => e.id === id);
   if (!entry) return;
   const next = !entry.is_favorite;
@@ -813,6 +852,19 @@ function setSort(val) {
 
 // ── Global search ─────────────────────────────────────────────
 function bindGlobalEvents() {
+  // Ripple effect sur les boutons
+  document.addEventListener("click", e => {
+    const btn = e.target.closest(".btn");
+    if (!btn) return;
+    const ripple = document.createElement("span");
+    ripple.className = "ripple-effect";
+    const rect = btn.getBoundingClientRect();
+    ripple.style.left = (e.clientX - rect.left) + "px";
+    ripple.style.top  = (e.clientY - rect.top)  + "px";
+    btn.appendChild(ripple);
+    ripple.addEventListener("animationend", () => ripple.remove());
+  });
+
   document.addEventListener("input", e => {
     if (e.target.id === "global-search") {
       State.filters.search = e.target.value;
@@ -832,7 +884,10 @@ function toast(msg, type = "info") {
   el.className = `toast ${type}`;
   el.textContent = msg;
   container.appendChild(el);
-  setTimeout(() => el.remove(), 3200);
+  setTimeout(() => {
+    el.classList.add("removing");
+    el.addEventListener("animationend", () => el.remove(), { once: true });
+  }, 2800);
 }
 
 // ── Escape HTML ───────────────────────────────────────────────
@@ -992,6 +1047,11 @@ async function renderDiscover() {
   }
 
   grid.innerHTML = unique.map((it, idx) => discoverCardHTML(it, idx)).join("");
+  requestAnimationFrame(() => {
+    grid.querySelectorAll(".discover-card").forEach((card, i) => {
+      card.style.animationDelay = `${i * 60}ms`;
+    });
+  });
 }
 
 function discoverCardHTML(it, idx) {
