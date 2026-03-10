@@ -75,7 +75,9 @@ function toggleTheme() {
 
 // ── Auth UI ───────────────────────────────────────────────────
 function renderAuthPage() {
-  document.getElementById("app").innerHTML = `
+  const app = document.getElementById("app");
+  app.style.cssText = "display:block";
+  app.innerHTML = `
     <div id="page-auth">
       <div class="auth-card">
         <div class="logo">Kulturo</div>
@@ -103,7 +105,9 @@ function renderAuthPage() {
 
 // ── App shell ─────────────────────────────────────────────────
 function renderApp() {
-  document.getElementById("app").innerHTML = `
+  const app = document.getElementById("app");
+  app.style.cssText = "";
+  app.innerHTML = `
     <!-- Topbar -->
     <header id="topbar">
       <div class="topbar-logo">Kulturo</div>
