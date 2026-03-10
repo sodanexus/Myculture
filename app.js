@@ -713,12 +713,12 @@ function openModal(entry = null, prefillTitle = null) {
               <label>Statut</label>
               <select id="f-status">
                 ${["wishlist","playing","finished","paused","dropped"].map(s =>
-                  `<option value="${s}" ${entry?.status===s?"selected":""}>${STATUS_LABELS[s]}</option>`
+                  `<option value="${s}" ${(entry?.status===s||((!entry)&&s==="finished"))?"selected":""}>${STATUS_LABELS[s]}</option>`
                 ).join("")}
               </select>
             </div>
             <div class="form-group">
-              <label>Note (1–10)</label>
+              <label>Note (1–10) <span id="rating-tooltip" class="rating-tooltip-label"></span></label>
               <div class="rating-stars" id="rating-stars"></div>
             </div>
           </div>
@@ -779,19 +779,47 @@ function openModal(entry = null, prefillTitle = null) {
   setTimeout(() => document.getElementById("f-title")?.focus(), 100);
 }
 
+const RATING_LABELS = {
+  1:  "Fuyez cette merde",
+  2:  "Vraiment pas fou",
+  3:  "Bof",
+  4:  "Pas terrible",
+  5:  "Correct",
+  6:  "Pas mal",
+  7:  "Bien",
+  8:  "Très bien",
+  9:  "Excellent",
+  10: "Chef-d'œuvre absolu",
+};
+
 function buildRatingStars(current) {
   const wrap = document.getElementById("rating-stars");
   if (!wrap) return;
   wrap.innerHTML = Array.from({length:10}, (_,i) => {
     const n = i + 1;
-    return `<button type="button" class="${n<=current?"on":""}" onclick="UI.setRating(${n})" title="${n}/10">${n<=current?"★":"☆"}</button>`;
+    return `<button type="button" class="${n<=current?"on":""}"
+      onclick="UI.setRating(${n})"
+      onmouseenter="UI.showRatingLabel(${n})"
+      onmouseleave="UI.hideRatingLabel()"
+      title="${n}/10 — ${RATING_LABELS[n]}">${n<=current?"★":"☆"}</button>`;
   }).join("");
+  // Affiche le label de la note actuelle si déjà notée
+  if (current) showRatingLabel(current);
 }
 
 let _currentRating = 0;
 function setRating(n) {
   _currentRating = n;
   buildRatingStars(n);
+  showRatingLabel(n);
+}
+function showRatingLabel(n) {
+  const el = document.getElementById("rating-tooltip");
+  if (el) { el.textContent = `— ${RATING_LABELS[n]}`; el.style.opacity = "1"; }
+}
+function hideRatingLabel() {
+  const el = document.getElementById("rating-tooltip");
+  if (el && !_currentRating) { el.style.opacity = "0"; }
 }
 
 function updateApiAvailLabel(type) {
@@ -1826,6 +1854,8 @@ window.UI = {
   addToWishlist,
   toggleTheme,
   saveUsername,
+  showRatingLabel,
+  hideRatingLabel,
   onTypeChange:    () => { const t = document.getElementById("f-type")?.value; updateApiAvailLabel(t); },
   switchAuthTab:   (tab) => {
     document.querySelectorAll(".auth-tab").forEach(b => b.classList.toggle("active", b.id === `tab-${tab}`));
