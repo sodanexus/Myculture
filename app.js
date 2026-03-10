@@ -251,8 +251,8 @@ function renderApp() {
       <button class="bottom-nav-item active" data-nav="library" onclick="UI.navTo('library')" title="Bibliothèque">
         ${iconGrid()}
       </button>
-      <button class="bottom-nav-item" data-nav="type-game" onclick="UI.navTo('type-game')" title="Jeux">
-        ${iconGame()}
+      <button class="bottom-nav-item" data-nav="fav" onclick="UI.navTo('fav')" title="Coups de cœur">
+        ${iconHeart()}
       </button>
       <button class="bottom-nav-item bottom-nav-add" onclick="UI.openAddModal()" title="Ajouter">
         ${iconPlus()}
@@ -946,44 +946,7 @@ function bindGlobalEvents() {
     if (e.key === "Escape") closeModal();
   });
 
-  // Swipe gauche/droite sur la grille (mobile)
-  let _touchStartX = 0;
-  let _touchStartY = 0;
-  const SWIPE_THRESHOLD = 60;
-  const CATEGORIES = ["all", "game", "movie", "book"];
 
-  document.addEventListener("touchstart", e => {
-    _touchStartX = e.touches[0].clientX;
-    _touchStartY = e.touches[0].clientY;
-  }, { passive: true });
-
-  document.addEventListener("touchend", e => {
-    const grid = document.getElementById("cards-grid");
-    if (!grid) return;
-    // Seulement si on swipe sur la grille ou le main
-    const target = e.target.closest("#main");
-    if (!target) return;
-    // Ignore si une modal est ouverte
-    if (document.querySelector(".modal-overlay")) return;
-
-    const dx = e.changedTouches[0].clientX - _touchStartX;
-    const dy = e.changedTouches[0].clientY - _touchStartY;
-    // Swipe horizontal net (pas vertical)
-    if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dy) > Math.abs(dx) * 0.8) return;
-
-    const cur = CATEGORIES.indexOf(State.filters.type === "all" ? "all" : State.filters.type);
-    const next = dx < 0
-      ? Math.min(cur + 1, CATEGORIES.length - 1)
-      : Math.max(cur - 1, 0);
-
-    if (next === cur) return;
-    const type = CATEGORIES[next];
-    navTo(type === "all" ? "library" : `type-${type}`);
-    // Feedback visuel
-    updateCategoryTabs(type);
-    grid.style.animation = `swipeSlide${dx < 0 ? "Left" : "Right"} .25s ease both`;
-    grid.addEventListener("animationend", () => grid.style.animation = "", { once: true });
-  }, { passive: true });
 }
 
 // ── Toast ─────────────────────────────────────────────────────
@@ -1007,6 +970,7 @@ function esc(str) {
 }
 
 // ── Icons (inline SVG minifiés) ───────────────────────────────
+const iconHeart   = () => `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
 const iconGame    = () => `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4M8 10v4M15 12h.01M17 12h.01"/></svg>`;
 const iconCompass = () => `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>`;
 const iconPlus    = () => `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>`;
