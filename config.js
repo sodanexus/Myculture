@@ -31,7 +31,7 @@ igdb: {
 
   groq: {
   apiKey: "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",
-  model:  "llama3-8b-8192",
+  model:  "llama-3.1-8b-instant",
 },
 
   // ── App settings ────────────────────────────────────────
