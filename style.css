@@ -1002,14 +1002,17 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
 /* ── Liens externes fiche détaillée ──────────────────────── */
 .detail-ext-links {
   display: flex;
-  gap: .5rem;
-  padding: .5rem 1.5rem .25rem;
-  flex-wrap: wrap;
+  gap: .4rem;
+  flex-wrap: nowrap;
 }
 .detail-ext-link {
   text-decoration: none;
-  font-size: .78rem;
+  font-size: .72rem;
+  padding: .3rem .6rem;
+  opacity: .85;
+  transition: opacity var(--transition);
 }
+.detail-ext-link:hover { opacity: 1; }
 
 /* ── Vue liste ────────────────────────────────────────────── */
 #cards-grid.list-view {
@@ -1670,56 +1673,63 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
     gap: .75rem;
   }
 
+  /* Topbar — pas de coupure */
+  .topbar-right { flex-shrink: 0; }
+  .topbar-search-wrap { min-width: 0; }
+
   /* Bottom nav visible */
   #bottom-nav {
     display: flex;
     position: fixed;
     bottom: 0; left: 0; right: 0;
-    height: 64px;
+    height: 58px;
     background: var(--bg-2);
     border-top: 1px solid var(--border);
     backdrop-filter: blur(12px);
     z-index: 150;
-    padding: 0 .5rem;
+    padding: 0 .75rem;
     padding-bottom: env(safe-area-inset-bottom, 0);
+    align-items: center;
+    justify-content: space-around;
+    gap: .25rem;
   }
   .bottom-nav-item {
     flex: 1;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: .2rem;
     border: none;
     background: transparent;
     color: var(--text-3);
-    font-size: .6rem;
-    font-weight: 600;
     cursor: pointer;
-    padding: .4rem .2rem;
+    height: 44px;
     border-radius: var(--radius);
     transition: color .18s, background .18s, transform .15s var(--ease-spring);
   }
-  .bottom-nav-item svg, .bottom-nav-item > span:first-child {
-    font-size: 1.1rem;
-    line-height: 1;
+  .bottom-nav-item svg {
+    width: 22px;
+    height: 22px;
+    stroke-width: 1.8;
   }
-  .bottom-nav-item:active { transform: scale(.9); }
+  .bottom-nav-item:active { transform: scale(.85); }
   .bottom-nav-item.active { color: var(--accent); }
-  .bottom-nav-item.active > svg { stroke: var(--accent); }
+  .bottom-nav-item.active svg { stroke: var(--accent); }
 
   .bottom-nav-add {
     background: var(--accent);
-    color: #0d0d0f !important;
-    border-radius: var(--radius-lg);
-    margin: .4rem .25rem;
-    flex: 0 0 52px;
+    color: #0d0d0f;
+    border-radius: 50%;
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
+    box-shadow: 0 4px 16px rgba(200,169,110,.4);
   }
-  .bottom-nav-add svg { stroke: #0d0d0f; }
+  .bottom-nav-add svg { stroke: #0d0d0f; width: 20px; height: 20px; }
+  .bottom-nav-add.active { color: #0d0d0f; }
 
   /* Toast au dessus du bottom nav */
   #toast-container {
-    bottom: 76px !important;
+    bottom: 70px !important;
   }
 }
 
