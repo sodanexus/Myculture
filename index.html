@@ -45,10 +45,20 @@
     Pour un usage rapide sans compte, laissez les valeurs
     par défaut et l'app démarrera en mode démo.
   -->
-  <script src="config.js"></script>
+  <script src="config.js" defer></script>
 
   <!-- ── Application (modules ES) ───────────────────────────── -->
-  <script type="module" src="app.js"></script>
+  <script type="module">
+    async function waitForConfig(retries = 20) {
+      if (typeof CONFIG !== "undefined") {
+        await import("./app.js");
+        return;
+      }
+      if (retries <= 0) { console.error("config.js non chargé"); return; }
+      setTimeout(() => waitForConfig(retries - 1), 50);
+    }
+    waitForConfig();
+  </script>
 
 </body>
 </html>
