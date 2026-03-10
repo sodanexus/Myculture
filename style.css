@@ -1928,3 +1928,17 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   transition: opacity .15s;
 }
 .quick-result-api:hover .quick-add-icon { opacity: 1; }
+
+.quick-add-fallback {
+  padding: .55rem .85rem;
+  font-size: .82rem;
+  color: var(--text-2);
+  cursor: pointer;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  transition: background var(--transition);
+}
+.quick-add-fallback:hover { background: var(--bg-3); color: var(--accent); }
+.quick-add-fallback strong { color: var(--text-1); }
