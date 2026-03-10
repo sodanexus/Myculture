@@ -130,6 +130,58 @@ export const Media = {
   },
 };
 
+// ── Profiles ─────────────────────────────────────────────────
+export const Profiles = {
+  async get(userId) {
+    const { data, error } = await _client
+      .from("profiles")
+      .select("id, username")
+      .eq("id", userId)
+      .single();
+    if (error && error.code !== "PGRST116") throw error; // PGRST116 = not found, c'est ok
+    return data || null;
+  },
+
+  async upsert(userId, username) {
+    const { data, error } = await _client
+      .from("profiles")
+      .upsert({ id: userId, username })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async getAll() {
+    const { data, error } = await _client
+      .from("profiles")
+      .select("id, username");
+    if (error) throw error;
+    return data || [];
+  },
+};
+
+// ── Activité partagée ─────────────────────────────────────────
+export const Activity = {
+  async getFeed(limit = 50) {
+    const { data: entries, error } = await _client
+      .from("media_entries")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+
+    const profiles = await Profiles.getAll();
+    const profileMap = {};
+    profiles.forEach(p => { profileMap[p.id] = p.username; });
+
+    return (entries || []).map(e => ({
+      ...e,
+      username: profileMap[e.user_id] || "Utilisateur",
+    }));
+  },
+};
+
 // ── Calcul des statistiques (partagé avec le mode démo) ──────
 export function computeStats(entries) {
   const total = entries.length;
