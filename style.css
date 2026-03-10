@@ -1811,3 +1811,38 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   .filter-bar::-webkit-scrollbar { display: none; }
   .filter-chip, .filter-select { flex-shrink: 0; }
 }
+
+/* ── Swipe indicator (mobile) ─────────────────────────────── */
+.swipe-indicator {
+  display: none;
+}
+@media (max-width: 680px) {
+  .swipe-indicator {
+    display: flex;
+    justify-content: center;
+    gap: .4rem;
+    padding: .5rem 0 .25rem;
+  }
+  .swipe-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border-2);
+    transition: all .2s var(--ease-spring);
+  }
+  .swipe-dot.active {
+    background: var(--accent);
+    width: 18px;
+    border-radius: 99px;
+  }
+}
+
+/* ── Swipe slide animation ────────────────────────────────── */
+@keyframes swipeSlideLeft {
+  from { opacity: .6; transform: translateX(20px); }
+  to   { opacity: 1;  transform: translateX(0); }
+}
+@keyframes swipeSlideRight {
+  from { opacity: .6; transform: translateX(-20px); }
+  to   { opacity: 1;  transform: translateX(0); }
+}
