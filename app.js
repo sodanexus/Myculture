@@ -950,8 +950,6 @@ function bindGlobalEvents() {
   document.addEventListener("input", e => {
     if (e.target.id === "global-search") {
       const q = e.target.value.trim();
-      State.filters.search = q;
-      renderCards();
       updateQuickAdd(q);
     }
   });
