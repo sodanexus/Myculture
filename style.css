@@ -1499,12 +1499,6 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   to   { opacity: 0; transform: translateX(20px); }
 }
 
-/* ── Parallax cover — transition douce au reset ──────────── */
-.card-cover {
-  transition: transform .3s var(--ease-smooth);
-  will-change: transform;
-}
-
 /* ── Barres dashboard animées ────────────────────────────── */
 .bar-fill {
   transition: width .8s cubic-bezier(.4,0,.2,1);
