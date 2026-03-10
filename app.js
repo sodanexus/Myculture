@@ -184,6 +184,9 @@ function renderApp() {
         ✦ Découverte
       </button>
       <span class="nav-section-label">Compte</span>
+      <button class="nav-item" data-nav="activity" onclick="UI.navTo('activity')">
+        ${iconActivity()} Activité
+      </button>
       <button class="nav-item" data-nav="profile" onclick="UI.navTo('profile')">
         👤 Mon profil
       </button>
