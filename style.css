@@ -1406,3 +1406,109 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
 .filter-chip.active {
   box-shadow: 0 2px 12px rgba(200,169,110,.2);
 }
+
+
+/* ============================================================
+   ANIMATIONS AVANCÉES
+   ============================================================ */
+
+/* ── Loading bar ──────────────────────────────────────────── */
+#loading-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: transparent;
+  overflow: hidden;
+  pointer-events: none;
+}
+#loading-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent));
+  background-size: 200% 100%;
+  animation: shimmerBar 1.5s linear infinite;
+  border-radius: 0 2px 2px 0;
+  box-shadow: 0 0 8px var(--accent);
+}
+@keyframes shimmerBar {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Confetti ─────────────────────────────────────────────── */
+.confetti-piece {
+  position: fixed;
+  top: -10px;
+  pointer-events: none;
+  z-index: 9999;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(0) rotate(0deg) translateX(0); opacity: 1; }
+  70%  { opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg) translateX(calc((var(--drift,1)) * 80px)); opacity: 0; }
+}
+
+/* ── Theme wave ───────────────────────────────────────────── */
+.theme-wave {
+  position: fixed;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: var(--bg);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 9998;
+  animation: themeWave .45s var(--ease-smooth) forwards;
+}
+@keyframes themeWave {
+  from { width: 0;    height: 0;    opacity: .8; }
+  to   { width: 250vmax; height: 250vmax; opacity: 0; }
+}
+
+/* ── Glow pulsant sur coups de cœur ──────────────────────── */
+@keyframes favGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(200,169,110,0); }
+  50%       { box-shadow: 0 0 16px 4px rgba(200,169,110,.25); }
+}
+.media-card.favorite {
+  animation: favGlow 3s ease-in-out infinite;
+}
+.media-card.favorite:hover {
+  animation: none;
+  box-shadow: 0 12px 40px rgba(0,0,0,.5), 0 0 20px rgba(200,169,110,.3);
+}
+
+/* ── Transitions directionnelles entre pages ─────────────── */
+@keyframes pageSlideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes pageSlideInLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes pageSlideOutLeft {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(-20px); }
+}
+@keyframes pageSlideOutRight {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(20px); }
+}
+
+/* ── Parallax cover — transition douce au reset ──────────── */
+.card-cover {
+  transition: transform .3s var(--ease-smooth);
+  will-change: transform;
+}
+
+/* ── Barres dashboard animées ────────────────────────────── */
+.bar-fill {
+  transition: width .8s cubic-bezier(.4,0,.2,1);
+}
+.month-bar {
+  transition: height .6s cubic-bezier(.34,1.56,.64,1);
+}
