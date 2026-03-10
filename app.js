@@ -253,13 +253,18 @@ async function loadEntries() {
 // ── Navigation ────────────────────────────────────────────────
 function showPage(name) {
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-  document.querySelectorAll(".nav-item[data-page]").forEach(b => b.classList.remove("active"));
+  // Désactive tous les nav-items (pages ET filtres catégorie)
+  document.querySelectorAll(".nav-item[data-page], .nav-item[data-filter-type]").forEach(b => b.classList.remove("active"));
   const page = document.getElementById(`page-${name}`);
   if (page) page.classList.add("active");
   const navBtn = document.querySelector(`.nav-item[data-page="${name}"]`);
   if (navBtn) navBtn.classList.add("active");
   if (name === "dashboard") renderDashboard();
   if (name === "discover")  renderDiscover();
+  // Si on quitte la découverte, on remet le filtre type à "all"
+  if (name !== "discover") {
+    State.filters.type = "all";
+  }
 }
 
 // ── Filter bar ────────────────────────────────────────────────
@@ -665,19 +670,21 @@ function closeModalOnBg(e) {
 // ── Filtres ───────────────────────────────────────────────────
 function setTypeFilter(type) {
   State.filters.type = type;
-  // Highlight sidebar
+  showPage("library");
   document.querySelectorAll(".nav-item[data-filter-type]").forEach(b =>
     b.classList.toggle("active", b.dataset.filterType === type));
   renderCards();
 }
 function setStatusFilter(status) {
   State.filters.status = status;
+  showPage("library");
   document.querySelectorAll(".filter-chip").forEach(c =>
     c.classList.toggle("active", c.textContent.trim() === (status==="all"?"Tous":STATUS_LABELS[status])));
   renderCards();
 }
 function setFavFilter() {
   State.filters.favorite = !State.filters.favorite;
+  showPage("library");
   const btn = document.querySelector(".nav-item[data-filter-fav]");
   if (btn) btn.classList.toggle("active", State.filters.favorite);
   renderCards();
