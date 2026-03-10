@@ -41,45 +41,45 @@ const STATUS_LABELS= { wishlist:"Wishlist", playing:"En cours", finished:"Termin
 
 // ── Init ──────────────────────────────────────────────────────
 async function init() {
-  try {
   if (typeof CONFIG === "undefined") {
     console.error("CONFIG non défini — vérifiez que config.js est chargé.");
     document.getElementById("app").innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#e05b5b;font-family:sans-serif;flex-direction:column;gap:1rem"><b>Erreur : config.js introuvable</b><p style="font-size:.85rem;color:#a0a0b0">Vérifiez que config.js est présent dans votre dépôt GitHub.</p></div>';
     return;
   }
-  initSupabase();
-  applyTheme(localStorage.getItem("kulturo-theme") || CONFIG.app.defaultTheme);
+  try {
+    initSupabase();
+    applyTheme(localStorage.getItem("kulturo-theme") || CONFIG.app.defaultTheme);
 
-  if (!isConfigured() || CONFIG.app.demoMode) {
-    State.demoMode = true;
-    State.entries  = structuredClone(DEMO_DATA);
-    renderApp();
-    showPage("library");
-  } else {
-    // Vérifie d'abord si une session existe déjà (cas du refresh)
-    const existingUser = await Auth.getUser().catch(() => null);
-    if (existingUser) {
-      State.user = existingUser;
+    if (!isConfigured() || CONFIG.app.demoMode) {
+      State.demoMode = true;
+      State.entries  = structuredClone(DEMO_DATA);
       renderApp();
-      await loadEntries();
       showPage("library");
     } else {
-      renderAuthPage();
-    }
-    // Écoute les changements d'auth (login/logout)
-    Auth.onAuthChange((event, user) => {
-      State.user = user;
-      if (event === "SIGNED_IN" && user) {
+      const existingUser = await Auth.getUser().catch(() => null);
+      if (existingUser) {
+        State.user = existingUser;
         renderApp();
-        loadEntries();
+        await loadEntries();
         showPage("library");
-      } else if (event === "SIGNED_OUT") {
+      } else {
         renderAuthPage();
       }
-    });
+      Auth.onAuthChange((event, user) => {
+        State.user = user;
+        if (event === "SIGNED_IN" && user) {
+          renderApp();
+          loadEntries();
+          showPage("library");
+        } else if (event === "SIGNED_OUT") {
+          renderAuthPage();
+        }
+      });
+    }
+    bindGlobalEvents();
+  } catch(err) {
+    console.error("Erreur init:", err);
   }
-
-  bindGlobalEvents();
 }
 
 if (document.readyState === 'loading') {
