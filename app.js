@@ -875,23 +875,6 @@ function setSort(val) {
 
 // ── Global search ─────────────────────────────────────────────
 function bindGlobalEvents() {
-  // Parallax sur les covers de cartes
-  document.addEventListener("mousemove", e => {
-    const card = e.target.closest(".media-card:not(.discover-card)");
-    if (!card) return;
-    const rect  = card.getBoundingClientRect();
-    const cx    = (e.clientX - rect.left) / rect.width  - 0.5;
-    const cy    = (e.clientY - rect.top)  / rect.height - 0.5;
-    const cover = card.querySelector(".card-cover");
-    if (cover) cover.style.transform = `scale(1.06) translate(${cx*6}px, ${cy*6}px)`;
-  });
-  document.addEventListener("mouseleave", e => {
-    const card = e.target.closest(".media-card");
-    if (!card) return;
-    const cover = card.querySelector(".card-cover");
-    if (cover) cover.style.transform = "";
-  }, true);
-
   // Ripple effect sur les boutons
   document.addEventListener("click", e => {
     const btn = e.target.closest(".btn");
