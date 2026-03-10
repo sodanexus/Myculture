@@ -218,6 +218,7 @@ function renderApp() {
             <button class="btn btn-secondary" id="discover-filter-movie" onclick="UI.setDiscoverType('movie')">🎬 Films</button>
             <button class="btn btn-secondary" id="discover-filter-book"  onclick="UI.setDiscoverType('book')" >📚 Livres</button>
             <button class="btn btn-primary"   onclick="UI.refreshDiscover()">↻ Actualiser</button>
+            <button class="btn btn-ghost btn-sm" onclick="UI.clearDiscoverMemory()" title="Effacer la mémoire des suggestions">🗑 Mémoire</button>
           </div>
         </div>
         <p style="color:var(--text-3);font-size:.85rem;margin-bottom:1.5rem">Basé sur vos coups de cœur et vos meilleures notes.</p>
@@ -656,10 +657,13 @@ async function saveEntry() {
         State.entries.unshift(created);
       }
     }
+    const wasAdding = !State.editingId;
+    const savedTitle = payload.title;
     closeModal();
     if (!State.demoMode) await loadEntries();
     else { renderCards(); updateBadges(); }
-    toast(State.editingId ? "Mis à jour ✓" : "Ajouté ✓", "success");
+    toast(wasAdding ? `"${savedTitle}" ajouté ✓` : "Mis à jour ✓", "success");
+    if (wasAdding) flashNewCard(savedTitle);
   } catch (e) {
     toast("Erreur : " + e.message, "error");
   }
@@ -916,9 +920,10 @@ function discoverCardHTML(it, idx) {
         </div>
         ${it.author ? `<div style="font-size:.75rem;color:var(--text-3);margin-top:.2rem">${esc(it.author)}</div>` : ""}
         ${it.groq_reason ? `<div class="discover-reason">✦ ${esc(it.groq_reason)}</div>` : it.description ? `<div style="font-size:.75rem;color:var(--text-2);margin-top:.35rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(it.description)}</div>` : ""}
-        <button class="btn btn-secondary btn-sm" style="margin-top:.75rem;width:100%" onclick="UI.addToWishlist(${idx})">
-          + Wishlist
-        </button>
+        <div style="display:flex;gap:.4rem;margin-top:.75rem">
+          <button class="btn btn-secondary btn-sm" style="flex:1" onclick="UI.addToWishlist(${idx})">+ Wishlist</button>
+          <button class="btn btn-ghost btn-sm" title="Pas intéressé" onclick="UI.ignoreDiscover(${idx})">✕</button>
+        </div>
       </div>
     </article>`;
 }
@@ -948,14 +953,33 @@ async function addToWishlist(idx) {
       State.entries.unshift(created);
     }
     updateBadges();
-    // Retire la carte du résultat
-    DiscoverState.results.splice(idx, 1);
-    const grid = document.getElementById("discover-grid");
-    if (grid) grid.innerHTML = DiscoverState.results.map((r,i) => discoverCardHTML(r,i)).join("");
+    addIgnored(it.title); // ne plus proposer ce titre
+    removeDiscoverCard(idx);
     toast(`"${it.title}" ajouté à la wishlist ✓`, "success");
+    flashNewCard(it.title);
   } catch (e) {
     toast("Erreur : " + e.message, "error");
   }
+}
+
+function removeDiscoverCard(idx) {
+  DiscoverState.results.splice(idx, 1);
+  const grid = document.getElementById("discover-grid");
+  if (grid) {
+    if (!DiscoverState.results.length) {
+      grid.innerHTML = `<div class="empty-state"><div class="empty-icon">✦</div><h3>Plus de suggestions</h3><p><button class="btn btn-secondary btn-sm" onclick="UI.clearDiscoverMemory()">Effacer la mémoire</button> pour en voir de nouvelles.</p></div>`;
+    } else {
+      grid.innerHTML = DiscoverState.results.map((r,i) => discoverCardHTML(r,i)).join("");
+    }
+  }
+}
+
+function ignoreDiscover(idx) {
+  const it = DiscoverState.results[idx];
+  if (!it) return;
+  addIgnored(it.title);
+  removeDiscoverCard(idx);
+  toast(`"${it.title}" ignoré`, "info");
 }
 
 function setDiscoverType(type) {
@@ -1027,6 +1051,53 @@ function openDetailPanel(id) {
     </div>`;
 }
 
+
+// ── Animation nouvelle carte ──────────────────────────────────
+function flashNewCard(title) {
+  // Attend que le DOM soit mis à jour puis anime la première carte correspondante
+  requestAnimationFrame(() => {
+    const cards = document.querySelectorAll(".media-card");
+    for (const card of cards) {
+      const t = card.querySelector(".card-title");
+      if (t && t.textContent.trim().toLowerCase().includes(title.toLowerCase())) {
+        card.classList.add("card-flash");
+        card.addEventListener("animationend", () => card.classList.remove("card-flash"), { once: true });
+        card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        break;
+      }
+    }
+  });
+}
+
+// ── Mémorisation découverte ───────────────────────────────────
+const DISCOVER_IGNORED_KEY = "kulturo-discover-ignored";
+const DISCOVER_SEEN_KEY    = "kulturo-discover-seen";
+
+function getIgnored() {
+  try { return new Set(JSON.parse(localStorage.getItem(DISCOVER_IGNORED_KEY) || "[]")); }
+  catch { return new Set(); }
+}
+function getSeen() {
+  try { return new Set(JSON.parse(localStorage.getItem(DISCOVER_SEEN_KEY) || "[]")); }
+  catch { return new Set(); }
+}
+function addIgnored(title) {
+  const s = getIgnored(); s.add(title.toLowerCase());
+  localStorage.setItem(DISCOVER_IGNORED_KEY, JSON.stringify([...s]));
+}
+function addSeen(titles) {
+  const s = getSeen();
+  titles.forEach(t => s.add(t.toLowerCase()));
+  localStorage.setItem(DISCOVER_SEEN_KEY, JSON.stringify([...s]));
+}
+function clearDiscoverMemory() {
+  localStorage.removeItem(DISCOVER_IGNORED_KEY);
+  localStorage.removeItem(DISCOVER_SEEN_KEY);
+  DiscoverState.results = [];
+  renderDiscover();
+  toast("Mémoire effacée — nouvelles suggestions en cours…", "info");
+}
+
 // ── Interface publique (appelée depuis le HTML inline) ────────
 window.UI = {
   openAddModal:    () => { _currentRating = 0; window._apiSelected = null; openModal(); },
@@ -1044,6 +1115,8 @@ window.UI = {
   setSort,
   setDiscoverType,
   refreshDiscover: () => { DiscoverState.results = []; renderDiscover(); },
+  ignoreDiscover,
+  clearDiscoverMemory,
   addToWishlist,
   toggleTheme,
   onTypeChange:    () => { const t = document.getElementById("f-type")?.value; updateApiAvailLabel(t); },
