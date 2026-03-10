@@ -146,10 +146,6 @@ function renderApp() {
       <button class="nav-item" data-filter-fav onclick="UI.setFavFilter()">
         ♥ Coups de cœur <span class="nav-badge" id="badge-fav">—</span>
       </button>
-      <span class="nav-section-label">Outils</span>
-      <button class="nav-item" onclick="UI.exportJSON()">↑ Exporter JSON</button>
-      <button class="nav-item" onclick="UI.importJSON()">↓ Importer JSON</button>
-      <input type="file" id="import-file" accept=".json" style="display:none" onchange="UI.handleImport(event)" />
     </nav>
 
     <!-- Main -->
@@ -614,41 +610,6 @@ function closeModalOnBg(e) {
   if (e.target.id === "modal-overlay") closeModal();
 }
 
-// ── Export / Import JSON ──────────────────────────────────────
-function exportJSON() {
-  const blob = new Blob([JSON.stringify(State.entries, null, 2)], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `kulturo-export-${Date.now()}.json`;
-  a.click();
-  toast("Export téléchargé ✓", "success");
-}
-function importJSON() { document.getElementById("import-file")?.click(); }
-async function handleImport(e) {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  try {
-    const text = await file.text();
-    const data = JSON.parse(text);
-    if (!Array.isArray(data)) throw new Error("Format invalide");
-    if (State.demoMode) {
-      State.entries = data;
-    } else {
-      // Insère dans Supabase (ignore doublons par titre)
-      for (const entry of data) {
-        const { id, created_at, updated_at, user_id, ...payload } = entry;
-        await Media.create(payload);
-      }
-      State.entries = await Media.getAll();
-    }
-    renderCards();
-    updateBadges();
-    toast(`${data.length} entrées importées ✓`, "success");
-  } catch (err) {
-    toast("Import échoué : " + err.message, "error");
-  }
-  e.target.value = "";
-}
 
 // ── Filtres ───────────────────────────────────────────────────
 function setTypeFilter(type) {
@@ -728,9 +689,6 @@ window.UI = {
   setFavFilter,
   setSort,
   toggleTheme,
-  exportJSON,
-  importJSON,
-  handleImport,
   onTypeChange:    () => { const t = document.getElementById("f-type")?.value; updateApiAvailLabel(t); },
   switchAuthTab:   (tab) => {
     document.querySelectorAll(".auth-tab").forEach(b => b.classList.toggle("active", b.id === `tab-${tab}`));
