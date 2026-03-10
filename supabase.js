@@ -85,12 +85,16 @@ export const Media = {
 
   async create(entry) {
     const user = await Auth.getUser();
+    const payload = { ...entry, user_id: user.id };
     const { data, error } = await _client
       .from("media_entries")
-      .insert({ ...entry, user_id: user.id })
+      .insert(payload)
       .select()
       .single();
-    if (error) throw error;
+    if (error) {
+      console.error("[Supabase] insert error:", error, "\npayload:", payload);
+      throw new Error(error.message + (error.details ? " — " + error.details : ""));
+    }
     return data;
   },
 
