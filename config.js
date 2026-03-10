@@ -38,3 +38,4 @@ const CONFIG = {
     demoMode: false, // true = données de démo si Supabase non configuré
   },
 };
+console.log("demoMode =", CONFIG.app.demoMode)
