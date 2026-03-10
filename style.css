@@ -1660,16 +1660,16 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
     display: flex;
     position: fixed;
     bottom: 0; left: 0; right: 0;
-    height: 58px;
     background: var(--bg-2);
     border-top: 1px solid var(--border);
     backdrop-filter: blur(12px);
     z-index: 150;
     padding: 0 .75rem;
-    padding-bottom: env(safe-area-inset-bottom, 0);
+    padding-bottom: max(env(safe-area-inset-bottom), 12px);
     align-items: center;
     justify-content: space-around;
     gap: .25rem;
+    min-height: 58px;
   }
   .bottom-nav-item {
     flex: 1;
@@ -1745,7 +1745,7 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   .fav-btn { width: 24px; height: 24px; font-size: 11px; }
 
   #app { overflow-x: hidden; }
-  #main { overflow-x: hidden; padding: 1rem; }
+  #main { overflow-x: hidden; padding: 1rem; padding-bottom: calc(max(env(safe-area-inset-bottom), 12px) + 70px); }
   #cards-grid {
     grid-template-columns: repeat(3, 1fr);
     width: 100%;
