@@ -188,6 +188,7 @@ function renderApp() {
     <main id="main">
       <!-- Page Bibliothèque -->
       <section id="page-library" class="page active">
+        <div id="swipe-indicator" class="swipe-indicator"></div>
         <div class="page-header">
           <h2>Bibliothèque</h2>
           <div class="page-actions">
@@ -333,6 +334,9 @@ function navTo(key) {
 
   // Sauvegarde la nav active
   localStorage.setItem("kulturo-nav", key);
+  // Mise à jour indicateur swipe
+  const swipeType = key.startsWith("type-") ? key.replace("type-", "") : "all";
+  updateSwipeIndicator(swipeType);
 
   if (key === "dashboard") {
     showPage("dashboard");
@@ -936,6 +940,45 @@ function bindGlobalEvents() {
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") closeModal();
   });
+
+  // Swipe gauche/droite sur la grille (mobile)
+  let _touchStartX = 0;
+  let _touchStartY = 0;
+  const SWIPE_THRESHOLD = 60;
+  const CATEGORIES = ["all", "game", "movie", "book"];
+
+  document.addEventListener("touchstart", e => {
+    _touchStartX = e.touches[0].clientX;
+    _touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener("touchend", e => {
+    const grid = document.getElementById("cards-grid");
+    if (!grid) return;
+    // Seulement si on swipe sur la grille ou le main
+    const target = e.target.closest("#main");
+    if (!target) return;
+    // Ignore si une modal est ouverte
+    if (document.querySelector(".modal-overlay")) return;
+
+    const dx = e.changedTouches[0].clientX - _touchStartX;
+    const dy = e.changedTouches[0].clientY - _touchStartY;
+    // Swipe horizontal net (pas vertical)
+    if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dy) > Math.abs(dx) * 0.8) return;
+
+    const cur = CATEGORIES.indexOf(State.filters.type === "all" ? "all" : State.filters.type);
+    const next = dx < 0
+      ? Math.min(cur + 1, CATEGORIES.length - 1)
+      : Math.max(cur - 1, 0);
+
+    if (next === cur) return;
+    const type = CATEGORIES[next];
+    navTo(type === "all" ? "library" : `type-${type}`);
+    // Feedback visuel
+    updateSwipeIndicator(type);
+    grid.style.animation = `swipeSlide${dx < 0 ? "Left" : "Right"} .25s ease both`;
+    grid.addEventListener("animationend", () => grid.style.animation = "", { once: true });
+  }, { passive: true });
 }
 
 // ── Toast ─────────────────────────────────────────────────────
@@ -1486,6 +1529,22 @@ function quickAdd(title) {
   _currentRating = 0;
   window._apiSelected = null;
   openModal(null, title);
+}
+
+
+// ── Swipe indicator mobile ────────────────────────────────────
+function updateSwipeIndicator(type) {
+  const el = document.getElementById("swipe-indicator");
+  if (!el) return;
+  const TABS = [
+    { key: "all",   label: "Tous" },
+    { key: "game",  label: "Jeux" },
+    { key: "movie", label: "Films" },
+    { key: "book",  label: "Livres" },
+  ];
+  el.innerHTML = TABS.map(t => `
+    <div class="swipe-dot${t.key === type ? " active" : ""}" title="${t.label}"></div>
+  `).join("");
 }
 
 // ── Vue grille / liste ────────────────────────────────────────
