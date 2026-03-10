@@ -55,11 +55,26 @@ async function init() {
     renderApp();
     showPage("library");
   } else {
-    renderAuthPage();
+    // Vérifie d'abord si une session existe déjà (cas du refresh)
+    const existingUser = await Auth.getUser().catch(() => null);
+    if (existingUser) {
+      State.user = existingUser;
+      renderApp();
+      await loadEntries();
+      showPage("library");
+    } else {
+      renderAuthPage();
+    }
+    // Écoute les changements d'auth (login/logout)
     Auth.onAuthChange((event, user) => {
       State.user = user;
-      if (user) { renderApp(); loadEntries(); showPage("library"); }
-      else      { renderAuthPage(); }
+      if (event === "SIGNED_IN" && user) {
+        renderApp();
+        loadEntries();
+        showPage("library");
+      } else if (event === "SIGNED_OUT") {
+        renderAuthPage();
+      }
     });
   }
 
