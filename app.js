@@ -188,7 +188,12 @@ function renderApp() {
     <main id="main">
       <!-- Page Bibliothèque -->
       <section id="page-library" class="page active">
-        <div id="swipe-indicator" class="swipe-indicator"></div>
+        <div class="category-tabs" id="category-tabs">
+          <button class="category-tab active" onclick="UI.navTo('library')">Tous</button>
+          <button class="category-tab" onclick="UI.navTo('type-game')">🎮 Jeux</button>
+          <button class="category-tab" onclick="UI.navTo('type-movie')">🎬 Films</button>
+          <button class="category-tab" onclick="UI.navTo('type-book')">📚 Livres</button>
+        </div>
         <div class="page-header">
           <h2>Bibliothèque</h2>
           <div class="page-actions">
@@ -334,9 +339,9 @@ function navTo(key) {
 
   // Sauvegarde la nav active
   localStorage.setItem("kulturo-nav", key);
-  // Mise à jour indicateur swipe
-  const swipeType = key.startsWith("type-") ? key.replace("type-", "") : "all";
-  updateSwipeIndicator(swipeType);
+  // Mise à jour onglets catégories mobile
+  const tabType = key.startsWith("type-") ? key.replace("type-", "") : "all";
+  updateCategoryTabs(tabType);
 
   if (key === "dashboard") {
     showPage("dashboard");
@@ -975,7 +980,7 @@ function bindGlobalEvents() {
     const type = CATEGORIES[next];
     navTo(type === "all" ? "library" : `type-${type}`);
     // Feedback visuel
-    updateSwipeIndicator(type);
+    updateCategoryTabs(type);
     grid.style.animation = `swipeSlide${dx < 0 ? "Left" : "Right"} .25s ease both`;
     grid.addEventListener("animationend", () => grid.style.animation = "", { once: true });
   }, { passive: true });
@@ -1532,19 +1537,11 @@ function quickAdd(title) {
 }
 
 
-// ── Swipe indicator mobile ────────────────────────────────────
-function updateSwipeIndicator(type) {
-  const el = document.getElementById("swipe-indicator");
-  if (!el) return;
-  const TABS = [
-    { key: "all",   label: "Tous" },
-    { key: "game",  label: "Jeux" },
-    { key: "movie", label: "Films" },
-    { key: "book",  label: "Livres" },
-  ];
-  el.innerHTML = TABS.map(t => `
-    <div class="swipe-dot${t.key === type ? " active" : ""}" title="${t.label}"></div>
-  `).join("");
+// ── Category tabs mobile ─────────────────────────────────────
+function updateCategoryTabs(type) {
+  const tabs = document.querySelectorAll(".category-tab");
+  const map = ["all", "game", "movie", "book"];
+  tabs.forEach((tab, i) => tab.classList.toggle("active", map[i] === type));
 }
 
 // ── Vue grille / liste ────────────────────────────────────────
