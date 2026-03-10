@@ -28,19 +28,50 @@ export const TMDb = {
 
   async search(query) {
     if (!this.available()) return [];
-    const url = `${CONFIG.tmdb.baseUrl}/search/movie?api_key=${CONFIG.tmdb.apiKey}&query=${encodeURIComponent(query)}&language=fr-FR`;
-    const data = await apiFetch(url);
-    return (data.results || []).slice(0, 6).map(m => ({
+    const base = CONFIG.tmdb.baseUrl;
+    const key  = CONFIG.tmdb.apiKey;
+    const lang = "language=fr-FR";
+
+    const [movies, shows] = await Promise.allSettled([
+      apiFetch(`${base}/search/movie?api_key=${key}&query=${encodeURIComponent(query)}&${lang}`),
+      apiFetch(`${base}/search/tv?api_key=${key}&query=${encodeURIComponent(query)}&${lang}`),
+    ]);
+
+    const normalizeMovie = m => ({
       external_id:  String(m.id),
       title:        m.title,
       cover_url:    m.poster_path ? `${CONFIG.tmdb.imageBase}${m.poster_path}` : null,
       description:  m.overview,
       release_year: m.release_date ? parseInt(m.release_date) : null,
-      genre:        null, // enrichi via detail si besoin
+      genre:        null,
       author:       null,
       platform:     null,
       source_api:   "tmdb",
-    }));
+    });
+
+    const normalizeShow = s => ({
+      external_id:  String(s.id),
+      title:        s.name,
+      cover_url:    s.poster_path ? `${CONFIG.tmdb.imageBase}${s.poster_path}` : null,
+      description:  s.overview,
+      release_year: s.first_air_date ? parseInt(s.first_air_date) : null,
+      genre:        null,
+      author:       null,
+      platform:     null,
+      source_api:   "tmdb",
+    });
+
+    const movieResults = movies.status === "fulfilled" ? (movies.value.results || []).slice(0, 4).map(normalizeMovie) : [];
+    const showResults  = shows.status  === "fulfilled" ? (shows.value.results  || []).slice(0, 4).map(normalizeShow)  : [];
+
+    // Entrelace films et séries pour avoir un mix équilibré
+    const merged = [];
+    const max = Math.max(movieResults.length, showResults.length);
+    for (let i = 0; i < max; i++) {
+      if (movieResults[i]) merged.push(movieResults[i]);
+      if (showResults[i])  merged.push(showResults[i]);
+    }
+    return merged.slice(0, 8);
   },
 };
 
