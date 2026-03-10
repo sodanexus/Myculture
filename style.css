@@ -1779,3 +1779,16 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   .rating-display { font-size: .72rem; }
   .fav-btn { width: 24px; height: 24px; font-size: 11px; }
 }
+
+/* ── Fix overflow mobile ──────────────────────────────────── */
+@media (max-width: 680px) {
+  #app { overflow-x: hidden; }
+  #main { overflow-x: hidden; padding: 1rem; }
+  #cards-grid {
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+    overflow: hidden;
+  }
+  .media-card { min-width: 0; overflow: hidden; }
+  .card-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
