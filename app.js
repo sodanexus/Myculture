@@ -141,6 +141,7 @@ function renderApp() {
         <span class="search-icon">${iconSearch()}</span>
         <input id="global-search" type="search" placeholder="Rechercher…" autocomplete="off" />
       </div>
+      <div id="loading-bar"><div id="loading-bar-fill"></div></div>
       <div class="topbar-right">
         <button class="btn-icon" id="btn-theme" title="Thème" onclick="UI.toggleTheme()">${iconSun()}</button>
         ${!State.demoMode ? `<button class="btn-icon" title="Déconnexion" onclick="UI.signOut()">${iconLogout()}</button>` : ""}
@@ -331,10 +332,30 @@ function navTo(key) {
   }
 }
 
+const PAGE_ORDER = ["library","dashboard","discover"];
+let _currentPage = "library";
 function showPage(name) {
-  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-  const page = document.getElementById(`page-${name}`);
-  if (page) page.classList.add("active");
+  const oldPage = document.getElementById(`page-${_currentPage}`);
+  const newPage = document.getElementById(`page-${name}`);
+  if (!newPage) return;
+
+  const oldIdx = PAGE_ORDER.indexOf(_currentPage);
+  const newIdx = PAGE_ORDER.indexOf(name);
+  const dir    = newIdx >= oldIdx ? 1 : -1;
+
+  document.querySelectorAll(".page").forEach(p => {
+    p.classList.remove("active","slide-left","slide-right");
+  });
+
+  if (oldPage && oldPage !== newPage) {
+    oldPage.style.animation = `pageSlideOut${dir>0?"Left":"Right"} .2s ease forwards`;
+    setTimeout(() => { oldPage.style.animation = ""; }, 220);
+  }
+
+  newPage.style.animation = `pageSlideIn${dir>0?"Right":"Left"} .28s var(--ease-spring) forwards`;
+  newPage.classList.add("active");
+  _currentPage = name;
+
   if (name === "dashboard") renderDashboard();
   if (name === "discover")  renderDiscover();
 }
@@ -782,11 +803,13 @@ async function saveEntry() {
     }
     const wasAdding = !State.editingId;
     const savedTitle = payload.title;
+    const justFinished = payload.status === "finished";
     closeModal();
     if (!State.demoMode) await loadEntries();
     else { renderCards(); updateBadges(); }
     toast(wasAdding ? `"${savedTitle}" ajouté ✓` : "Mis à jour ✓", "success");
     if (wasAdding) flashNewCard(savedTitle);
+    if (justFinished) launchConfetti();
   } catch (e) {
     toast("Erreur : " + e.message, "error");
   }
@@ -852,6 +875,23 @@ function setSort(val) {
 
 // ── Global search ─────────────────────────────────────────────
 function bindGlobalEvents() {
+  // Parallax sur les covers de cartes
+  document.addEventListener("mousemove", e => {
+    const card = e.target.closest(".media-card:not(.discover-card)");
+    if (!card) return;
+    const rect  = card.getBoundingClientRect();
+    const cx    = (e.clientX - rect.left) / rect.width  - 0.5;
+    const cy    = (e.clientY - rect.top)  / rect.height - 0.5;
+    const cover = card.querySelector(".card-cover");
+    if (cover) cover.style.transform = `scale(1.06) translate(${cx*6}px, ${cy*6}px)`;
+  });
+  document.addEventListener("mouseleave", e => {
+    const card = e.target.closest(".media-card");
+    if (!card) return;
+    const cover = card.querySelector(".card-cover");
+    if (cover) cover.style.transform = "";
+  }, true);
+
   // Ripple effect sur les boutons
   document.addEventListener("click", e => {
     const btn = e.target.closest(".btn");
@@ -967,6 +1007,7 @@ async function renderDiscover() {
   DiscoverState.loading = true;
 
   grid.innerHTML = `<div class="discover-loading"><div class="spinner"></div><span>Analyse de vos goûts avec l'IA…</span></div>`;
+  loadingStart();
 
   const liked = State.entries.filter(e => e.is_favorite || (e.rating && e.rating >= 7));
   if (!liked.length) {
@@ -1040,6 +1081,7 @@ async function renderDiscover() {
 
   DiscoverState.results = unique;
   DiscoverState.loading = false;
+  loadingDone();
 
   if (!unique.length) {
     grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><h3>Aucun résultat</h3><p>Vérifiez vos clés API dans config.js.</p></div>`;
@@ -1305,6 +1347,70 @@ function clearDiscoverMemory() {
 }
 
 // ── Interface publique (appelée depuis le HTML inline) ────────
+
+// ── Loading bar ───────────────────────────────────────────────
+let _loadingTimer = null;
+function loadingStart() {
+  const bar = document.getElementById("loading-bar-fill");
+  if (!bar) return;
+  if (_loadingTimer) clearTimeout(_loadingTimer);
+  bar.style.transition = "none";
+  bar.style.width = "0%";
+  requestAnimationFrame(() => {
+    bar.style.transition = "width 1.2s cubic-bezier(.1,0,.2,1)";
+    bar.style.width = "70%";
+  });
+}
+function loadingDone() {
+  const bar = document.getElementById("loading-bar-fill");
+  if (!bar) return;
+  bar.style.transition = "width .2s ease";
+  bar.style.width = "100%";
+  _loadingTimer = setTimeout(() => {
+    bar.style.transition = "opacity .3s ease";
+    bar.style.opacity = "0";
+    setTimeout(() => { bar.style.width = "0%"; bar.style.opacity = "1"; }, 300);
+  }, 250);
+}
+
+
+// ── Confetti ──────────────────────────────────────────────────
+function launchConfetti() {
+  const colors = ["#c8a96e","#e8c98e","#5b8dee","#e05b7f","#5bbf8d","#fff"];
+  const container = document.body;
+  for (let i = 0; i < 60; i++) {
+    const el = document.createElement("div");
+    el.className = "confetti-piece";
+    el.style.cssText = `
+      left: ${Math.random()*100}vw;
+      background: ${colors[Math.floor(Math.random()*colors.length)]};
+      width: ${4 + Math.random()*6}px;
+      height: ${8 + Math.random()*8}px;
+      animation-delay: ${Math.random()*600}ms;
+      animation-duration: ${900 + Math.random()*800}ms;
+      transform: rotate(${Math.random()*360}deg);
+      border-radius: ${Math.random()>0.5?"50%":"2px"};
+    `;
+    container.appendChild(el);
+    el.addEventListener("animationend", () => el.remove());
+  }
+}
+
+
+// ── Compteurs animés ──────────────────────────────────────────
+function animateCounter(el, target, duration = 600) {
+  if (!el) return;
+  const start = performance.now();
+  const from  = 0;
+  function step(now) {
+    const p = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - p, 3); // ease-out-cubic
+    el.textContent = Math.round(from + (target - from) * ease);
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
 // ── Vue grille / liste ────────────────────────────────────────
 function toggleView() {
   const grid = document.getElementById("cards-grid");
