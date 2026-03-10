@@ -1040,7 +1040,6 @@ Types valides : "game", "movie", "book". Maximum 12 suggestions.`;
 async function renderDiscover() {
   const grid = document.getElementById("discover-grid");
   if (!grid) return;
-  try {
   if (DiscoverState.loading) return;
   DiscoverState.loading = true;
 
