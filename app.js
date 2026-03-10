@@ -140,6 +140,7 @@ function renderApp() {
       <div class="topbar-search-wrap">
         <span class="search-icon">${iconSearch()}</span>
         <input id="global-search" type="search" placeholder="Rechercher…" autocomplete="off" />
+        <div id="search-quick-add" class="search-quick-add" style="display:none"></div>
       </div>
       <div id="loading-bar"><div id="loading-bar-fill"></div></div>
       <div class="topbar-right">
@@ -238,6 +239,25 @@ function renderApp() {
 
     <!-- Modal container -->
     <div id="modal-root"></div>
+
+    <!-- Bottom nav (mobile) -->
+    <nav id="bottom-nav">
+      <button class="bottom-nav-item active" data-nav="library" onclick="UI.navTo('library')">
+        ${iconGrid()}<span>Biblio</span>
+      </button>
+      <button class="bottom-nav-item" data-nav="type-game" onclick="UI.navTo('type-game')">
+        🎮<span>Jeux</span>
+      </button>
+      <button class="bottom-nav-item bottom-nav-add" onclick="UI.openAddModal()">
+        ${iconPlus()}<span>Ajouter</span>
+      </button>
+      <button class="bottom-nav-item" data-nav="dashboard" onclick="UI.navTo('dashboard')">
+        ${iconChart()}<span>Profil</span>
+      </button>
+      <button class="bottom-nav-item" data-nav="discover" onclick="UI.navTo('discover')">
+        ✦<span>Découverte</span>
+      </button>
+    </nav>
   `;
 
   applyTheme(localStorage.getItem("kulturo-theme") || CONFIG.app.defaultTheme);
@@ -306,6 +326,10 @@ function navTo(key) {
       indicator.style.opacity = "1";
     }
   }
+  // Sync bottom nav
+  document.querySelectorAll(".bottom-nav-item[data-nav]").forEach(b => {
+    b.classList.toggle("active", b.dataset.nav === key);
+  });
 
   // Sauvegarde la nav active
   localStorage.setItem("kulturo-nav", key);
@@ -587,7 +611,7 @@ function renderDashboard() {
 }
 
 // ── Modal Ajout / Édition ─────────────────────────────────────
-function openModal(entry = null) {
+function openModal(entry = null, prefillTitle = null) {
   const isEdit = !!entry;
   State.editingId = isEdit ? entry.id : null;
 
@@ -890,8 +914,23 @@ function bindGlobalEvents() {
 
   document.addEventListener("input", e => {
     if (e.target.id === "global-search") {
-      State.filters.search = e.target.value;
+      const q = e.target.value.trim();
+      State.filters.search = q;
       renderCards();
+      updateQuickAdd(q);
+    }
+  });
+  document.addEventListener("focusout", e => {
+    if (e.target.id === "global-search") {
+      setTimeout(() => {
+        const qa = document.getElementById("search-quick-add");
+        if (qa) qa.style.display = "none";
+      }, 200);
+    }
+  });
+  document.addEventListener("focusin", e => {
+    if (e.target.id === "global-search" && e.target.value.trim().length > 1) {
+      updateQuickAdd(e.target.value.trim());
     }
   });
   document.addEventListener("keydown", e => {
@@ -1394,6 +1433,57 @@ function animateCounter(el, target, duration = 600) {
   requestAnimationFrame(step);
 }
 
+
+// ── Recherche rapide + ajout depuis topbar ────────────────────
+function updateQuickAdd(query) {
+  const qa = document.getElementById("search-quick-add");
+  if (!qa) return;
+  if (!query || query.length < 2) { qa.style.display = "none"; return; }
+
+  // Filtre les entrées existantes
+  const matches = State.entries.filter(e =>
+    e.title.toLowerCase().includes(query.toLowerCase())
+  ).slice(0, 4);
+
+  // Bouton "Ajouter" si aucune correspondance exacte
+  const exactMatch = State.entries.some(e =>
+    e.title.toLowerCase() === query.toLowerCase()
+  );
+
+  let html = "";
+  if (matches.length) {
+    html += matches.map(e => `
+      <div class="quick-result" onclick="UI.openEditModal('${e.id}')">
+        ${e.cover_url ? `<img src="${esc(e.cover_url)}" class="quick-thumb" alt="">` : `<div class="quick-thumb quick-thumb-ph">${TYPE_ICONS[e.media_type]||"🎭"}</div>`}
+        <div class="quick-info">
+          <div class="quick-title">${esc(e.title)}</div>
+          <div class="quick-sub">${TYPE_LABELS[e.media_type]} · ${STATUS_LABELS[e.status]}</div>
+        </div>
+      </div>`).join("");
+  }
+  if (!exactMatch) {
+    html += `<div class="quick-add-btn" onclick="UI.quickAdd('${esc(query).replace(/'/g,"\\'")}')">
+      ${iconPlus()} Ajouter "<strong>${esc(query)}</strong>"
+    </div>`;
+  }
+
+  qa.innerHTML = html;
+  qa.style.display = html ? "block" : "none";
+}
+
+function quickAdd(title) {
+  const qa = document.getElementById("search-quick-add");
+  if (qa) qa.style.display = "none";
+  const searchEl = document.getElementById("global-search");
+  if (searchEl) searchEl.value = "";
+  State.filters.search = "";
+  renderCards();
+  // Ouvre la modal pré-remplie avec le titre
+  _currentRating = 0;
+  window._apiSelected = null;
+  openModal(null, title);
+}
+
 // ── Vue grille / liste ────────────────────────────────────────
 function toggleView() {
   const grid = document.getElementById("cards-grid");
@@ -1406,6 +1496,7 @@ function toggleView() {
 
 window.UI = {
   openAddModal:    () => { _currentRating = 0; window._apiSelected = null; openModal(); },
+  quickAdd,
   openEditModal:   (id) => { openDetailPanel(id); },
   closeModal,
   openEditFromDetail: (id) => { const e = State.entries.find(x => x.id === id); _currentRating = e?.rating||0; window._apiSelected = null; closeModal(); openModal(e); },
