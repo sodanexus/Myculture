@@ -40,7 +40,7 @@ const TYPE_ICONS   = { game:"🎮", movie:"🎬", book:"📚" };
 
 // Retourne "Série" si c'est une série TMDb, sinon le label par défaut
 function getTypeLabel(e) {
-  if (e.media_type === "movie" && e.platform === "Série") return "Série";
+  if (e.media_type === "movie" && e.subtype === "tv") return "Série";
   return TYPE_LABELS[e.media_type] || e.media_type;
 }
 const STATUS_LABELS= { wishlist:"Wishlist", playing:"En cours", finished:"Terminé", paused:"En pause", dropped:"Abandonné" };
@@ -899,6 +899,7 @@ async function saveEntry() {
     platform:      document.getElementById("f-platform")?.value?.trim() || null,
     external_id:   window._apiSelected?.external_id || null,
     source_api:    window._apiSelected?.source_api  || "manual",
+    subtype:       window._apiSelected?.subtype     || null,
   };
   window._apiSelected = null;
   _currentRating = 0;
