@@ -801,6 +801,7 @@ function buildRatingStars(current) {
       onclick="UI.setRating(${n})"
       onmouseenter="UI.showRatingLabel(${n})"
       onmouseleave="UI.hideRatingLabel()"
+      ontouchstart="UI.showRatingLabel(${n})"
       title="${n}/10 — ${RATING_LABELS[n]}">${n<=current?"★":"☆"}</button>`;
   }).join("");
   // Affiche le label de la note actuelle si déjà notée
