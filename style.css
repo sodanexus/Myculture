@@ -149,6 +149,7 @@ h3 { font-size: 1.1rem; font-weight: 700; }
   max-width: 480px;
   position: relative;
   padding-left: 0;
+  margin: 0 auto; /* centre dans la colonne 1fr */
 }
 .topbar-search-wrap input {
   padding-left: 2.4rem;
@@ -1752,8 +1753,9 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   .topbar-logo { font-size: 1.1rem; white-space: nowrap; }
   .topbar-search-wrap {
     min-width: 0;
-    max-width: none;
-    width: 100%;
+    max-width: 180px;
+    width: 180px;
+    margin: 0 0 0 auto; /* colle à droite */
   }
   .topbar-right {
     margin-left: 0;
