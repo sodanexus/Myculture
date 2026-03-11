@@ -164,12 +164,7 @@ h3 { font-size: 1.1rem; font-weight: 700; }
   color: var(--text-3);
   pointer-events: none;
 }
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  padding-right: 2rem; /* aligné avec padding de #main */
-}
+.topbar-right { display: none; }
 .btn-icon {
   width: 36px;
   height: 36px;
