@@ -146,10 +146,10 @@ h3 { font-size: 1.1rem; font-weight: 700; }
 }
 .topbar-search-wrap {
   flex: 1;
-  max-width: 480px;
+  max-width: 560px; /* élargie */
   position: relative;
   padding-left: 0;
-  margin: 0 auto; /* centre dans la colonne 1fr */
+  margin: 0 auto;
 }
 .topbar-search-wrap input {
   padding-left: 2.4rem;
@@ -168,7 +168,7 @@ h3 { font-size: 1.1rem; font-weight: 700; }
   display: flex;
   align-items: center;
   gap: .5rem;
-  padding-right: 1.5rem;
+  padding-right: 2rem; /* aligné avec padding de #main */
 }
 .btn-icon {
   width: 36px;
