@@ -198,13 +198,6 @@ function renderApp() {
     <main id="main">
       <!-- Page Bibliothèque -->
       <section id="page-library" class="page active">
-        <div class="category-tabs" id="category-tabs">
-          <button class="category-tab active" onclick="UI.navTo('library')">Tous</button>
-          <button class="category-tab" onclick="UI.navTo('type-game')">🎮 Jeux</button>
-          <button class="category-tab" onclick="UI.navTo('type-movie')">🎬 Films</button>
-          <button class="category-tab" onclick="UI.navTo('type-book')">📚 Livres</button>
-          <button class="category-tab" onclick="UI.navTo('fav')">♥ Favoris</button>
-        </div>
         <div class="page-header">
           <h2>Bibliothèque</h2>
           <div class="page-actions">
@@ -220,6 +213,13 @@ function renderApp() {
             <option value="rating">Note</option>
             <option value="title">Titre</option>
           </select>
+        </div>
+        <div class="category-tabs" id="category-tabs">
+          <button class="category-tab active" onclick="UI.navTo('library')">Tous</button>
+          <button class="category-tab" onclick="UI.navTo('type-game')">🎮 Jeux</button>
+          <button class="category-tab" onclick="UI.navTo('type-movie')">🎬 Films</button>
+          <button class="category-tab" onclick="UI.navTo('type-book')">📚 Livres</button>
+          <button class="category-tab" onclick="UI.navTo('fav')">♥ Favoris</button>
         </div>
         <div id="cards-grid"></div>
       </section>
