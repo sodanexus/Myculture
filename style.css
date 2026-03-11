@@ -113,7 +113,7 @@ h3 { font-size: 1.1rem; font-weight: 700; }
   display: grid;
   grid-template-columns: 220px 1fr auto;
   align-items: center;
-  gap: 1rem;
+  gap: 0;
   padding: .75rem 1.5rem .75rem 0;
   background: var(--bg-2);
   border-bottom: 1px solid var(--border);
@@ -136,6 +136,7 @@ h3 { font-size: 1.1rem; font-weight: 700; }
   flex: 1;
   max-width: 480px;
   position: relative;
+  padding-left: 0;
 }
 .topbar-search-wrap input {
   padding-left: 2.4rem;
