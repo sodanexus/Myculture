@@ -231,20 +231,6 @@ function renderApp() {
         </div>
         <div id="dashboard-content"></div>
       </section>
-        <div class="page-header">
-          <h2>Découverte</h2>
-          <div class="page-actions">
-            <button class="btn btn-secondary" id="discover-filter-all"   onclick="UI.setDiscoverType('all')"  >Tout</button>
-            <button class="btn btn-secondary" id="discover-filter-game"  onclick="UI.setDiscoverType('game')" >🎮 Jeux</button>
-            <button class="btn btn-secondary" id="discover-filter-movie" onclick="UI.setDiscoverType('movie')">🎬 Films</button>
-            <button class="btn btn-secondary" id="discover-filter-book"  onclick="UI.setDiscoverType('book')" >📚 Livres</button>
-            <button class="btn btn-primary"   onclick="UI.refreshDiscover()">↻ Actualiser</button>
-            <button class="btn btn-ghost btn-sm" onclick="UI.clearDiscoverMemory()" title="Effacer la mémoire des suggestions">🗑 Mémoire</button>
-          </div>
-        </div>
-        <p style="color:var(--text-3);font-size:.85rem;margin-bottom:1.5rem">Basé sur vos coups de cœur et vos meilleures notes.</p>
-        <div id="discover-grid" class="discover-grid"></div>
-      </section>
 
       <!-- Page Découverte -->
       <section id="page-discover" class="page">
