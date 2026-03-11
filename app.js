@@ -427,7 +427,6 @@ function showPage(name) {
   if (name === "dashboard") renderDashboard();
   if (name === "discover")  renderDiscover();
   if (name === "activity")  renderActivity();
-  if (name === "profile")   renderProfilePage();
 }
 
 // ── Filter bar ────────────────────────────────────────────────
@@ -1416,6 +1415,8 @@ Types valides : "game", "movie", "book". Maximum 12 suggestions.`;
 async function renderDiscover() {
   const grid = document.getElementById("discover-grid");
   if (!grid) return;
+  if (_currentPage !== "discover") return;
+  if (DiscoverState.results.length) { grid.innerHTML = DiscoverState.results.map((r,i) => discoverCardHTML(r,i)).join(""); return; }
   if (DiscoverState.loading) return;
   DiscoverState.loading = true;
 
