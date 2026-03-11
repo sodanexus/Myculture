@@ -2309,3 +2309,12 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   width: 3.5rem;
   flex-shrink: 0;
 }
+
+/* ── Identity bar dans profil fusionné ───────────────────────── */
+.profile-identity-bar {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
