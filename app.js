@@ -334,35 +334,18 @@ async function loadEntries() {
 
 // ── Navigation unifiée ───────────────────────────────────────
 function navTo(key) {
-  // #10 — ne rejoue pas l'animation si on clique sur la page déjà active
-  if (key === _currentPage || (key === "profile" && _currentPage === "dashboard")) return;
+  // #10 — ne rejoue pas l'animation si on clique exactement sur la même destination
+  // Exception : "library" doit toujours être accessible pour reset les filtres
+  if (key !== "library" && (key === _currentPage || (key === "profile" && _currentPage === "dashboard"))) return;
 
   // #2 — sauvegarde le scroll de la page courante
   const main = document.getElementById("main");
   if (main) State.scrollPos[_currentPage] = main.scrollTop;
 
-  // #2 — reset filtres seulement si on quitte la bibliothèque vers une vraie autre page
-  const isLibPage = ["library","type-game","type-movie","type-book","status-playing","status-wishlist","fav"].includes(key);
-  if (!isLibPage) {
-    // Sauvegarde les filtres actuels pour restauration
-    State.savedFilters = { ...State.filters };
-    State.filters.type     = "all";
-    State.filters.status   = "all";
-    State.filters.favorite = false;
-  } else if (State.savedFilters && isLibPage) {
-    // On revient dans la biblio — on repart de zéro (l'utilisateur a cliqué un nav)
-    State.savedFilters = null;
-    State.filters.type     = "all";
-    State.filters.status   = "all";
-    State.filters.favorite = false;
-  }
-
-  // #3 — si on tape dans la search depuis une autre page, on navigue vers library
-  const searchEl = document.getElementById("global-search");
-  if (searchEl && State.filters.search && key !== "library") {
-    navTo("library");
-    return;
-  }
+  // Reset filtres — chaque branche ci-dessous applique ce dont elle a besoin
+  State.filters.type     = "all";
+  State.filters.status   = "all";
+  State.filters.favorite = false;
 
   // Désactive tous les nav-items
   document.querySelectorAll(".nav-item[data-nav]").forEach(b => b.classList.remove("active"));
