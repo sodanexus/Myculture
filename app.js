@@ -8,8 +8,8 @@ import { searchMedia, apiAvailability }                            from "./api.j
 // ── État global ──────────────────────────────────────────────
 const State = {
   user:       null,
-  entries:    [],          // tableau local (cache)
-  demoMode:   false,       // true = pas de Supabase
+  entries:    [],
+  demoMode:   false,
   filters: {
     type:     "all",
     status:   "all",
@@ -17,7 +17,9 @@ const State = {
     search:   "",
     sort:     "created_at",
   },
-  editingId:  null,        // null = création, sinon UUID
+  editingId:  null,
+  scrollPos:  {},          // #2 — mémorise la position de scroll par page
+  savedFilters: null,      // #2 — mémorise les filtres avant changement de page
 };
 
 // ── Données de démo ──────────────────────────────────────────
@@ -332,17 +334,41 @@ async function loadEntries() {
 
 // ── Navigation unifiée ───────────────────────────────────────
 function navTo(key) {
-  // Reset tous les filtres
-  State.filters.type     = "all";
-  State.filters.status   = "all";
-  State.filters.favorite = false;
+  // #10 — ne rejoue pas l'animation si on clique sur la page déjà active
+  if (key === _currentPage || (key === "profile" && _currentPage === "dashboard")) return;
+
+  // #2 — sauvegarde le scroll de la page courante
+  const main = document.getElementById("main");
+  if (main) State.scrollPos[_currentPage] = main.scrollTop;
+
+  // #2 — reset filtres seulement si on quitte la bibliothèque vers une vraie autre page
+  const isLibPage = ["library","type-game","type-movie","type-book","status-playing","status-wishlist","fav"].includes(key);
+  if (!isLibPage) {
+    // Sauvegarde les filtres actuels pour restauration
+    State.savedFilters = { ...State.filters };
+    State.filters.type     = "all";
+    State.filters.status   = "all";
+    State.filters.favorite = false;
+  } else if (State.savedFilters && isLibPage) {
+    // On revient dans la biblio — on repart de zéro (l'utilisateur a cliqué un nav)
+    State.savedFilters = null;
+    State.filters.type     = "all";
+    State.filters.status   = "all";
+    State.filters.favorite = false;
+  }
+
+  // #3 — si on tape dans la search depuis une autre page, on navigue vers library
+  const searchEl = document.getElementById("global-search");
+  if (searchEl && State.filters.search && key !== "library") {
+    navTo("library");
+    return;
+  }
 
   // Désactive tous les nav-items
   document.querySelectorAll(".nav-item[data-nav]").forEach(b => b.classList.remove("active"));
   const btn = document.querySelector(`.nav-item[data-nav="${key}"]`);
   if (btn) {
     btn.classList.add("active");
-    // Glide indicator
     const indicator = document.getElementById("nav-indicator");
     if (indicator) {
       indicator.style.top  = btn.offsetTop + "px";
@@ -381,7 +407,7 @@ function navTo(key) {
     showPage("activity");
   } else if (key === "profile") {
     showPage("dashboard");
-    key = "dashboard"; // corrige la clé pour localStorage
+    key = "dashboard";
   } else {
     showPage("library");
     renderCards();
@@ -418,6 +444,13 @@ function showPage(name) {
   newPage.classList.add("active");
   _currentPage = name;
 
+  // #1 — restaure la position de scroll
+  const main = document.getElementById("main");
+  if (main) {
+    const saved = State.scrollPos[name] || 0;
+    requestAnimationFrame(() => { main.scrollTop = saved; });
+  }
+
   if (name === "dashboard") renderDashboard();
   if (name === "discover")  renderDiscover();
   if (name === "activity")  renderActivity();
@@ -446,17 +479,28 @@ function renderCards() {
   let entries = filterEntries(State.entries);
 
   if (!entries.length) {
+    const f = State.filters;
+    let emptyMsg = "Ajoutez votre premier film, jeu ou livre pour commencer.";
+    let emptyBtn = `<button class="btn btn-primary" onclick="UI.openAddModal()">${iconPlus()} Ajouter</button>`;
+    if (f.search)                    emptyMsg = `Aucun résultat pour "<strong>${esc(f.search)}</strong>".`;
+    else if (f.favorite)             emptyMsg = "Aucun coup de cœur pour l'instant. Marquez vos préférés avec ♥.";
+    else if (f.status !== "all")     emptyMsg = `Aucun média avec le statut "<strong>${STATUS_LABELS[f.status]}</strong>".`;
+    else if (f.type === "game")      emptyMsg = "Aucun jeu dans votre bibliothèque.";
+    else if (f.type === "movie")     emptyMsg = "Aucun film ou série dans votre bibliothèque.";
+    else if (f.type === "book")      emptyMsg = "Aucun livre dans votre bibliothèque.";
     grid.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon">🎭</div>
-        <h3>Rien ici pour le moment</h3>
-        <p>Ajoutez votre premier film, jeu ou livre pour commencer.</p>
-        <button class="btn btn-primary" onclick="UI.openAddModal()">${iconPlus()} Ajouter</button>
+        <h3>Rien ici</h3>
+        <p>${emptyMsg}</p>
+        ${f.search || f.favorite || f.status !== "all" || f.type !== "all"
+          ? `<button class="btn btn-secondary" onclick="UI.navTo('library')">Voir tout</button>`
+          : emptyBtn}
       </div>`;
     return;
   }
 
-  grid.innerHTML = entries.map(e => cardHTML(e)).join("");
+  grid.innerHTML = entries.map((e, i) => cardHTML(e, i)).join("");
 }
 
 function filterEntries(entries) {
@@ -478,7 +522,7 @@ function filterEntries(entries) {
   return res;
 }
 
-function cardHTML(e) {
+function cardHTML(e, i = 0) {
   const coverHTML = e.cover_url
     ? `<img class="card-cover" src="${e.cover_url}" alt="${esc(e.title)}" loading="lazy" onerror="this.replaceWith(makePlaceholder('${TYPE_ICONS[e.media_type]}'))">`
     : `<div class="card-cover-placeholder">${TYPE_ICONS[e.media_type]||"🎭"}</div>`;
@@ -488,7 +532,7 @@ function cardHTML(e) {
     : `<span class="rating-empty" style="font-size:.75rem;color:var(--text-3)">Non noté</span>`;
 
   return `
-    <article class="media-card${e.is_favorite?" favorite":""}" onclick="UI.openEditModal('${e.id}')">
+    <article class="media-card${e.is_favorite?" favorite":""}" style="animation-delay:${Math.min(i*25,250)}ms" onclick="UI.openEditModal('${e.id}')">
       <button class="fav-btn${e.is_favorite?" on":""}" onclick="event.stopPropagation();UI.toggleFav('${e.id}')" title="${e.is_favorite?"Retirer des favoris":"Coup de cœur"}">
         ${e.is_favorite ? "♥" : "♡"}
       </button>
@@ -535,9 +579,18 @@ function setProfileYear(y) {
   renderDashboard();
 }
 
-function renderDashboard() {
+async function renderDashboard() {
   const container = document.getElementById("dashboard-content");
   if (!container) return;
+
+  // #15 — charge le username AVANT le rendu pour éviter le flash
+  let cachedUsername = "";
+  if (!State.demoMode && State.user) {
+    try {
+      const p = await Profiles.get(State.user.id);
+      cachedUsername = p?.username || "";
+    } catch {}
+  }
 
   // Section identité (username) en haut
   const profileTopHTML = !State.demoMode ? `
@@ -552,20 +605,13 @@ function renderDashboard() {
         </div>
         <div style="display:flex;align-items:center;gap:.5rem">
           <input type="text" id="input-username" placeholder="Ton pseudo…" maxlength="30"
+            value="${esc(cachedUsername)}"
             style="font-size:.85rem;padding:.35rem .65rem;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-1);width:140px" />
           <button class="btn btn-primary btn-sm" onclick="UI.saveUsername()">Enregistrer</button>
         </div>
         <button class="btn btn-ghost btn-sm" onclick="UI.signOut()">Déconnexion</button>
       </div>
     </div>` : "";
-
-  // Charge le username en async
-  if (!State.demoMode) {
-    Profiles.get(State.user.id).then(p => {
-      const el = document.getElementById("input-username");
-      if (el && p?.username) el.value = p.username;
-    }).catch(() => {});
-  }
 
   // Populate year selector
   const yearSel = document.getElementById("profile-year-select");
@@ -1170,6 +1216,11 @@ async function saveEntry() {
   const title = document.getElementById("f-title")?.value?.trim();
   if (!title) { toast("Le titre est obligatoire.", "error"); return; }
 
+  // #7 — protection double-submit
+  const saveBtn = document.querySelector(".modal-footer .btn-primary");
+  if (saveBtn?.disabled) return;
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = "…"; }
+
   const payload = {
     title,
     media_type:    document.getElementById("f-type")?.value,
@@ -1210,24 +1261,30 @@ async function saveEntry() {
     const savedTitle = payload.title;
     const justFinished = payload.status === "finished";
     closeModal();
-    if (!State.demoMode) await loadEntries();
-    else { renderCards(); updateBadges(); }
+    // #13 — State.entries déjà mis à jour localement, pas besoin de refetch
+    renderCards();
+    updateBadges();
     toast(wasAdding ? `"${savedTitle}" ajouté ✓` : "Mis à jour ✓", "success");
     if (wasAdding) flashNewCard(savedTitle);
     if (justFinished) launchConfetti();
   } catch (e) {
+    const saveBtn = document.querySelector(".modal-footer .btn-primary");
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = State.editingId ? "Enregistrer" : "Ajouter"; }
     toast("Erreur : " + e.message, "error");
   }
 }
 
 async function deleteEntry(id) {
-  if (!confirm("Supprimer ce média ?")) return;
+  // #5 — modal de confirmation custom
+  const confirmed = await confirmDialog("Supprimer ce média ?", "Cette action est irréversible.", "Supprimer", "danger");
+  if (!confirmed) return;
   try {
     if (!State.demoMode) await Media.delete(id);
     State.entries = State.entries.filter(e => e.id !== id);
     closeModal();
-    if (!State.demoMode) await loadEntries();
-    else { renderCards(); updateBadges(); }
+    // #13 — mise à jour locale uniquement
+    renderCards();
+    updateBadges();
     toast("Supprimé", "info");
   } catch (e) {
     toast("Erreur : " + e.message, "error");
@@ -1248,8 +1305,9 @@ async function toggleFav(id) {
   try {
     if (!State.demoMode) await Media.toggleFavorite(id, entry.is_favorite);
     entry.is_favorite = next;
-    if (!State.demoMode) await loadEntries();
-    else { renderCards(); updateBadges(); }
+    // #13 — mise à jour locale uniquement
+    renderCards();
+    updateBadges();
   } catch (e) {
     toast("Erreur : " + e.message, "error");
   }
@@ -1264,13 +1322,43 @@ function closeModalOnBg(e) {
   if (e.target.id === "modal-overlay") closeModal();
 }
 
+// #5 — modal de confirmation custom
+function confirmDialog(title, message, confirmLabel = "Confirmer", variant = "danger") {
+  return new Promise(resolve => {
+    const root = document.getElementById("modal-root");
+    const prev = root.innerHTML;
+    root.insertAdjacentHTML("beforeend", `
+      <div class="modal-overlay confirm-overlay" id="confirm-overlay" style="z-index:1100;background:rgba(0,0,0,.6)">
+        <div class="modal confirm-modal" style="max-width:360px" role="alertdialog" aria-modal="true">
+          <div class="modal-header"><h3>${esc(title)}</h3></div>
+          <div class="modal-body" style="padding-top:.5rem">
+            <p style="color:var(--text-2);font-size:.9rem">${esc(message)}</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" id="confirm-cancel">Annuler</button>
+            <button class="btn btn-${variant}" id="confirm-ok">${esc(confirmLabel)}</button>
+          </div>
+        </div>
+      </div>`);
+    const overlay = document.getElementById("confirm-overlay");
+    const cleanup = (result) => { overlay.remove(); resolve(result); };
+    document.getElementById("confirm-ok").onclick     = () => cleanup(true);
+    document.getElementById("confirm-cancel").onclick = () => cleanup(false);
+    overlay.addEventListener("click", e => { if (e.target === overlay) cleanup(false); });
+    document.getElementById("confirm-ok").focus();
+  });
+}
+
 
 // ── Filtres chip (status bar) ─────────────────────────────────
+let _chipDebounce = null;
 function setStatusChip(status) {
   State.filters.status = status;
   document.querySelectorAll(".filter-chip").forEach(c =>
     c.classList.toggle("active", c.textContent.trim() === (status==="all"?"Tous":STATUS_LABELS[status])));
-  renderCards();
+  // #16 — debounce pour éviter re-render sur chaque clic rapide
+  clearTimeout(_chipDebounce);
+  _chipDebounce = setTimeout(() => renderCards(), 80);
 }
 function setSort(val) {
   State.filters.sort = val;
@@ -1296,6 +1384,12 @@ function bindGlobalEvents() {
   document.addEventListener("input", e => {
     if (e.target.id === "global-search") {
       const q = e.target.value.trim();
+      // #3 — si on tape depuis une autre page, navigue vers library
+      if (q.length > 0 && _currentPage !== "library") {
+        State.filters.search = q;
+        showPage("library");
+        renderCards();
+      }
       updateQuickAdd(q);
     }
   });
@@ -1509,7 +1603,7 @@ function discoverCardHTML(it, idx) {
     ? `<img class="card-cover" src="${it.cover_url}" alt="${esc(it.title)}" loading="lazy" onerror="this.style.display='none'">`
     : `<div class="card-cover-placeholder">${TYPE_ICONS[it.media_type]||"🎭"}</div>`;
   return `
-    <article class="media-card discover-card">
+    <article class="media-card discover-card" data-discover-idx="${idx}">
       ${cover}
       <div class="card-body">
         <div class="card-title">${esc(it.title)}</div>
@@ -1562,14 +1656,30 @@ async function addToWishlist(idx) {
 }
 
 function removeDiscoverCard(idx) {
+  // #14 — retire directement du DOM, pas de re-render complet
   DiscoverState.results.splice(idx, 1);
   const grid = document.getElementById("discover-grid");
-  if (grid) {
-    if (!DiscoverState.results.length) {
-      grid.innerHTML = `<div class="empty-state"><div class="empty-icon">✦</div><h3>Plus de suggestions</h3><p><button class="btn btn-secondary btn-sm" onclick="UI.clearDiscoverMemory()">Effacer la mémoire</button> pour en voir de nouvelles.</p></div>`;
-    } else {
-      grid.innerHTML = DiscoverState.results.map((r,i) => discoverCardHTML(r,i)).join("");
-    }
+  if (!grid) return;
+
+  if (!DiscoverState.results.length) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">✦</div><h3>Plus de suggestions</h3><p><button class="btn btn-secondary btn-sm" onclick="UI.clearDiscoverMemory()">Effacer la mémoire</button> pour en voir de nouvelles.</p></div>`;
+    return;
+  }
+
+  // Retire la carte par son index data-attribute
+  const card = grid.querySelector(`[data-discover-idx="${idx}"]`);
+  if (card) {
+    card.style.transition = "opacity .2s, transform .2s";
+    card.style.opacity = "0";
+    card.style.transform = "scale(.95)";
+    setTimeout(() => {
+      card.remove();
+      // Réindexe les data-attributes restants
+      grid.querySelectorAll("[data-discover-idx]").forEach((c, i) => c.dataset.discoverIdx = i);
+    }, 200);
+  } else {
+    // Fallback si pas de data-attribute
+    grid.innerHTML = DiscoverState.results.map((r,i) => discoverCardHTML(r,i)).join("");
   }
 }
 
