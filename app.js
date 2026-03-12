@@ -199,7 +199,6 @@ function renderApp() {
       <!-- Page Bibliothèque -->
       <section id="page-library" class="page active">
         <div class="page-header">
-          <h2>Bibliothèque</h2>
           <div class="page-actions">
             <button class="btn btn-secondary btn-icon-only" id="btn-view-toggle" title="Changer la vue" onclick="UI.toggleView()">⊞</button>
             <button class="btn btn-secondary btn-icon-only btn-theme" title="Thème" onclick="UI.toggleTheme()">${iconSun()}</button>
@@ -226,7 +225,7 @@ function renderApp() {
 
       <!-- Page Profil / Stats -->
       <section id="page-dashboard" class="page">
-        <div class="page-header"><h2>Mon profil</h2>
+        <div class="page-header">
           <div class="page-actions">
             <select class="filter-select" id="profile-year-select" onchange="UI.setProfileYear(this.value)"></select>
             <button class="btn btn-secondary btn-icon-only btn-theme" title="Thème" onclick="UI.toggleTheme()">${iconSun()}</button>
@@ -239,7 +238,6 @@ function renderApp() {
       <!-- Page Découverte -->
       <section id="page-discover" class="page">
         <div class="page-header">
-          <h2>Découverte</h2>
           <div class="page-actions">
             <button class="btn btn-secondary" id="discover-filter-all"   onclick="UI.setDiscoverType('all')"  >Tout</button>
             <button class="btn btn-secondary" id="discover-filter-game"  onclick="UI.setDiscoverType('game')" >🎮 Jeux</button>
@@ -257,7 +255,7 @@ function renderApp() {
 
       <!-- Page Activité partagée -->
       <section id="page-activity" class="page">
-        <div class="page-header"><h2>🎭 Activité</h2>
+        <div class="page-header">
           <div class="page-actions">
             <button class="btn btn-secondary btn-icon-only btn-theme" title="Thème" onclick="UI.toggleTheme()">${iconSun()}</button>
             ${!State.demoMode ? `<button class="btn btn-secondary btn-icon-only" title="Déconnexion" onclick="UI.signOut()">${iconLogout()}</button>` : ""}
