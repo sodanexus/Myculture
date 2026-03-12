@@ -1518,7 +1518,7 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   0%, 100% { box-shadow: 0 0 0 1.5px rgba(220,60,60,.6), 0 0 8px 0px rgba(220,60,60,.2); }
   50%       { box-shadow: 0 0 0 2px   rgba(220,60,60,.9), 0 0 14px 3px rgba(220,60,60,.35); }
 }
-.media-card.favorite .card-cover {
+.media-card.favorite:not(.both) .card-cover {
   animation: heartPulse 2.2s ease-in-out infinite;
 }
 
@@ -1527,7 +1527,7 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   0%, 100% { box-shadow: 0 0 0 1.5px rgba(200,169,110,.6), 0 0 8px 0px rgba(200,169,110,.2); }
   50%       { box-shadow: 0 0 0 2px   rgba(200,169,110,.95), 0 0 16px 4px rgba(200,169,110,.4); }
 }
-.media-card.perfect .card-cover {
+.media-card.perfect:not(.both) .card-cover {
   animation: perfectPulse 2.5s ease-in-out infinite;
 }
 
