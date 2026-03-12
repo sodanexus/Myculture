@@ -507,30 +507,30 @@ h3 { font-size: 1.1rem; font-weight: 700; }
 .star-wrap {
   position: relative;
   display: inline-flex;
-  font-size: 1.6rem;
-  line-height: 1;
+  align-items: center;
+  width: 28px;
+  height: 28px;
 }
-.star-full, .star-half {
+.star-svg {
+  pointer-events: none;
+  display: flex;
+}
+.star-svg svg {
+  transition: transform .12s var(--ease-spring);
+}
+.star-wrap:hover .star-svg svg { transform: scale(1.2); }
+.star-half-zone, .star-full-zone {
+  position: absolute;
+  top: 0;
+  height: 100%;
   background: none;
   border: none;
   padding: 0;
   cursor: pointer;
-  color: var(--border-2);
-  transition: color .15s, transform .15s;
-  line-height: 1;
+  z-index: 1;
 }
-.star-full {
-  font-size: 1.6rem;
-}
-.star-half {
-  font-size: .85rem;
-  vertical-align: middle;
-  margin-right: .05rem;
-  opacity: .7;
-}
-.star-half.on, .star-half:hover { color: var(--accent); opacity: 1; }
-.star-full.on,  .star-full:hover { color: var(--accent); }
-.star-full:hover { transform: scale(1.15); }
+.star-half-zone { left: 0; width: 50%; }
+.star-full-zone { right: 0; width: 50%; }
 
 /* demi-étoile sur les cartes */
 .card-star-half {
