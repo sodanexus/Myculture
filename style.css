@@ -333,6 +333,7 @@ h3 { font-size: 1.1rem; font-weight: 700; }
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 1.25rem;
+  transition: grid-template-columns .2s ease, gap .2s ease;
 }
 
 /* ── Carte média ──────────────────────────────────────────── */
@@ -983,43 +984,62 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
 .detail-ext-link:hover { opacity: 1; }
 
 /* ── Vue liste ────────────────────────────────────────────── */
-#cards-grid.list-view {
-  display: flex;
-  flex-direction: column;
-  gap: .5rem;
+/* ── Tailles de cartes ────────────────────────────────────── */
+
+/* PETITE — grille serrée, cover dominante, infos minimales */
+#cards-grid.cards-small {
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: .6rem;
 }
-#cards-grid.list-view .media-card {
-  display: grid;
-  grid-template-columns: 48px 1fr auto;
-  grid-template-rows: auto;
-  align-items: center;
-  border-radius: var(--radius);
-  padding: .5rem .75rem;
-  aspect-ratio: unset;
-  min-height: 64px;
+#cards-grid.cards-small .media-card .card-body {
+  padding: .4rem .5rem;
+  gap: .15rem;
 }
-#cards-grid.list-view .media-card .card-cover,
-#cards-grid.list-view .media-card .card-cover-placeholder {
-  width: 40px;
-  height: 52px;
-  border-radius: 4px;
-  object-fit: cover;
-  aspect-ratio: unset;
-  grid-row: 1 / 3;
-}
-#cards-grid.list-view .media-card .card-body {
-  padding: 0 .75rem;
-}
-#cards-grid.list-view .media-card .fav-btn {
-  position: static;
-  grid-column: 3;
-  font-size: .9rem;
-}
-#cards-grid.list-view .media-card .card-title {
-  font-size: .9rem;
-  margin-bottom: .15rem;
+#cards-grid.cards-small .media-card .card-title {
+  font-size: .7rem;
   -webkit-line-clamp: 1;
 }
+#cards-grid.cards-small .media-card .card-meta { display: none; }
+#cards-grid.cards-small .media-card .card-footer { display: none; }
+#cards-grid.cards-small .media-card .fav-btn {
+  width: 22px; height: 22px; font-size: 10px;
+  top: .3rem; right: .3rem;
+}
+
+/* MOYENNE — défaut actuel */
+#cards-grid.cards-medium {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.25rem;
+}
+
+/* GRANDE — plus large, auteur + année visibles */
+#cards-grid.cards-large {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+#cards-grid.cards-large .media-card .card-body {
+  padding: 1rem;
+  gap: .5rem;
+}
+#cards-grid.cards-large .media-card .card-title {
+  font-size: 1rem;
+  -webkit-line-clamp: 2;
+}
+#cards-grid.cards-large .card-author {
+  display: block;
+  font-size: .78rem;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#cards-grid.cards-large .card-year {
+  display: inline;
+}
+
+/* Par défaut, auteur et année cachés en taille petite/moyenne */
+.card-author { display: none; }
+.card-year   { display: none; }
 
 /* ── Profil / Stats ───────────────────────────────────────── */
 .profile-section {
@@ -1587,15 +1607,18 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
     overflow-y: visible;
   }
 
-  /* Grille 2 colonnes sur mobile */
-  #cards-grid {
+  /* Tailles cartes mobile */
+  #cards-grid.cards-small {
+    grid-template-columns: repeat(4, 1fr);
+    gap: .4rem;
+  }
+  #cards-grid.cards-medium {
+    grid-template-columns: repeat(3, 1fr);
+    gap: .5rem;
+  }
+  #cards-grid.cards-large {
     grid-template-columns: repeat(2, 1fr);
     gap: .75rem;
-  }
-
-  /* Vue liste mobile */
-  #cards-grid.list-view {
-    grid-template-columns: 1fr;
   }
 
   /* Page header compact */
@@ -1775,26 +1798,17 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   #loading-bar { grid-column: 1 / -1; }
 
   #cards-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: .5rem;
+    width: 100%;
+    overflow: hidden;
   }
   .card-body { padding: .5rem; gap: .2rem; }
-  .card-title { font-size: .75rem; -webkit-line-clamp: 1; }
+  .card-title { font-size: .75rem; -webkit-line-clamp: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .card-meta { gap: .2rem; }
   .badge { font-size: .6rem; padding: .1rem .35rem; }
   .card-footer { padding-top: .15rem; }
   .rating-display { font-size: .72rem; }
   .fav-btn { width: 24px; height: 24px; font-size: 11px; }
-
-  #app { overflow-x: hidden; }
-  /* #main padding déjà défini ci-dessus */
-  #cards-grid {
-    grid-template-columns: repeat(3, 1fr);
-    width: 100%;
-    overflow: hidden;
-  }
   .media-card { min-width: 0; overflow: hidden; }
-  .card-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   .filter-bar {
     display: flex;
