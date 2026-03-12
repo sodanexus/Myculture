@@ -528,8 +528,8 @@ function starsHTML(rating, is_favorite) {
   let starsEl = "";
   if (rating) {
     const perfect = rating === 10;
-    const full  = Math.floor(rating / 2);
-    const half  = rating % 2 === 1;
+    const full    = Math.floor(rating / 2);
+    const half    = rating % 2 === 1;
     starsEl = `<div class="card-stars${perfect ? " perfect" : ""}">` +
       "★".repeat(full) +
       (half ? `<span class="card-star-half">½</span>` : "") +
@@ -541,7 +541,7 @@ function starsHTML(rating, is_favorite) {
 
 function cardHTML(e, i = 0) {
   const coverHTML = e.cover_url
-    ? `<img class="card-cover" src="${e.cover_url}" alt="${esc(e.title)}" loading="lazy" onerror="this.replaceWith(makePlaceholder('${TYPE_ICONS[e.media_type]}'))">`
+    ? `<img class="card-cover" src="${e.cover_url}" alt="${esc(e.title)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling&&(this.nextElementSibling.style.display='flex')">`
     : `<div class="card-cover-placeholder">${TYPE_ICONS[e.media_type]||"🎭"}</div>`;
 
   const isPerfect = e.rating === 10;
