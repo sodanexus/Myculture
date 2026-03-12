@@ -395,7 +395,7 @@ h3 { font-size: 1.1rem; font-weight: 700; }
   min-height: 1rem;
 }
 .card-stars {
-  font-size: .62rem;
+  font-size: .85rem;
   color: var(--accent);
   letter-spacing: -.01em;
   line-height: 1;
@@ -416,7 +416,7 @@ h3 { font-size: 1.1rem; font-weight: 700; }
   to   { background-position: -200% center; }
 }
 .card-heart {
-  font-size: .75rem;
+  font-size: 1rem;
   color: var(--movie);
   line-height: 1;
   flex-shrink: 0;
@@ -429,8 +429,8 @@ h3 { font-size: 1.1rem; font-weight: 700; }
   45%       { transform: scale(1.15);}
   60%       { transform: scale(1);   }
 }
-#cards-grid.cards-small .card-stars { font-size: .62rem; }
-#cards-grid.cards-small .card-heart { font-size: .65rem; }
+#cards-grid.cards-small .card-stars { font-size: .72rem; }
+#cards-grid.cards-small .card-heart { font-size: .85rem; }
 #cards-grid.cards-small .card-bottom { padding: 0; }
 
 /* ── Badges ───────────────────────────────────────────────── */
