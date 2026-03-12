@@ -18,9 +18,6 @@ export function initSupabase() {
   return _client;
 }
 
-export function getClient() {
-  return _client;
-}
 
 export function isConfigured() {
   return _client !== null;
