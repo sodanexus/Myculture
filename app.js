@@ -538,7 +538,6 @@ function cardHTML(e, i = 0) {
       ${starsHTML(e.rating, e.is_favorite)}
     </article>`;
 }
-}
 
 // ── Badges sidebar ────────────────────────────────────────────
 function updateBadges() {
