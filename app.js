@@ -522,8 +522,15 @@ function cardHTML(e, i = 0) {
     ? `<img class="card-cover" src="${e.cover_url}" alt="${esc(e.title)}" loading="lazy" onerror="this.replaceWith(makePlaceholder('${TYPE_ICONS[e.media_type]}'))">`
     : `<div class="card-cover-placeholder">${TYPE_ICONS[e.media_type]||"🎭"}</div>`;
 
+  const isPerfect = e.rating === 10;
+  const classes = ["media-card",
+    e.is_favorite ? "favorite" : "",
+    isPerfect      ? "perfect"  : "",
+    (e.is_favorite && isPerfect) ? "both" : ""
+  ].filter(Boolean).join(" ");
+
   return `
-    <article class="media-card${e.is_favorite ? " favorite" : ""}" style="animation-delay:${Math.min(i*25,250)}ms" onclick="UI.openEditModal('${e.id}')">
+    <article class="${classes}" style="animation-delay:${Math.min(i*25,250)}ms" onclick="UI.openEditModal('${e.id}')">
       ${coverHTML}
       ${starsHTML(e.rating, e.is_favorite)}
     </article>`;
