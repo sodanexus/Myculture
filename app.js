@@ -2,7 +2,7 @@
 // app.js — Kulturo · Logique principale
 // ============================================================
 
-import { initSupabase, isConfigured, Auth, Media, computeStats, getClient, Profiles, Activity } from "./supabase.js";
+import { initSupabase, isConfigured, Auth, Media, computeStats, Profiles, Activity } from "./supabase.js";
 import { searchMedia, apiAvailability }                            from "./api.js";
 
 // ── État global ──────────────────────────────────────────────
