@@ -514,8 +514,11 @@ function starsHTML(rating, is_favorite) {
   let starsEl = "";
   if (rating) {
     const perfect = rating === 10;
+    const full  = Math.floor(rating / 2);
+    const half  = rating % 2 === 1;
     starsEl = `<div class="card-stars${perfect ? " perfect" : ""}">` +
-      "★".repeat(rating) +
+      "★".repeat(full) +
+      (half ? `<span class="card-star-half">½</span>` : "") +
       `</div>`;
   }
   const heartEl = is_favorite ? `<span class="card-heart">♥</span>` : "";
@@ -1155,19 +1158,29 @@ const RATING_LABELS = {
   10: "Chef-d'œuvre absolu",
 };
 
+// 5 étoiles, chaque étoile = 2 points, clic gauche = demi (impair), clic droit = plein (pair)
 function buildRatingStars(current) {
   const wrap = document.getElementById("rating-stars");
   if (!wrap) return;
-  wrap.innerHTML = Array.from({length:10}, (_,i) => {
-    const n = i + 1;
-    return `<button type="button" class="${n<=current?"on":""}"
-      onclick="UI.setRating(${n})"
-      onmouseenter="UI.showRatingLabel(${n})"
-      onmouseleave="UI.hideRatingLabel()"
-      ontouchstart="UI.showRatingLabel(${n})"
-      title="${n}/10 — ${RATING_LABELS[n]}">${n<=current?"★":"☆"}</button>`;
+  wrap.innerHTML = Array.from({length: 5}, (_, i) => {
+    const full = (i + 1) * 2;      // 2,4,6,8,10
+    const half = full - 1;         // 1,3,5,7,9
+    const filledFull = current >= full;
+    const filledHalf = current >= half && current < full;
+    return `
+      <span class="star-wrap">
+        <button type="button" class="star-half ${filledHalf || filledFull ? "on" : ""}"
+          onclick="UI.setRating(${half})"
+          onmouseenter="UI.showRatingLabel(${half})"
+          onmouseleave="UI.hideRatingLabel()"
+          title="${half}/10 — ${RATING_LABELS[half]}">½</button>
+        <button type="button" class="star-full ${filledFull ? "on" : ""}"
+          onclick="UI.setRating(${full})"
+          onmouseenter="UI.showRatingLabel(${full})"
+          onmouseleave="UI.hideRatingLabel()"
+          title="${full}/10 — ${RATING_LABELS[full]}">★</button>
+      </span>`;
   }).join("");
-  // Affiche le label de la note actuelle si déjà notée
   if (current) showRatingLabel(current);
 }
 
