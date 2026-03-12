@@ -651,7 +651,7 @@ h3 { font-size: 1.1rem; font-weight: 700; }
 /* ── Charts ───────────────────────────────────────────────── */
 .charts-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: 1fr 2fr;
   gap: 1.25rem;
   margin-bottom: 2rem;
 }
@@ -661,6 +661,14 @@ h3 { font-size: 1.1rem; font-weight: 700; }
   border-radius: var(--radius-lg);
   padding: 1.25rem;
 }
+.chart-card-compact {
+  padding: .85rem 1rem;
+}
+.chart-card-compact .top-row {
+  padding: .2rem .3rem;
+}
+.chart-card-compact .top-cover { width: 26px; height: 34px; }
+.chart-card-compact .top-title { font-size: .78rem; }
 .chart-card h3 { font-size: .875rem; font-weight: 600; color: var(--text-2); margin-bottom: 1rem; font-family: var(--font-body); }
 .bar-chart { display: flex; flex-direction: column; gap: .6rem; }
 .bar-item { display: flex; flex-direction: column; gap: .25rem; }
