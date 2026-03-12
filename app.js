@@ -907,25 +907,29 @@ function buildRatingStars(current) {
     const half = full - 1;
     const filledFull = current >= full;
     const filledHalf = current >= half && current < full;
+    const starColor = filledFull ? "var(--accent)" : "var(--star-empty)";
+    const halfColor = (filledFull || filledHalf) ? "var(--accent)" : "none";
     return `<span class="star-wrap">
-        <button type="button" class="star-btn star-half-btn ${filledFull || filledHalf ? "lit" : ""}"
+        <svg viewBox="0 0 20 20" width="28" height="28" class="star-svg">
+          <defs>
+            <clipPath id="hc${i}x"><rect x="0" y="0" width="10" height="20"/></clipPath>
+          </defs>
+          <polygon class="star-bg" points="10,2 12.9,7.6 19,8.5 14.5,12.9 15.6,19 10,16 4.4,19 5.5,12.9 1,8.5 7.1,7.6" fill="${starColor}"/>
+          <polygon class="star-half-fill" points="10,2 12.9,7.6 19,8.5 14.5,12.9 15.6,19 10,16 4.4,19 5.5,12.9 1,8.5 7.1,7.6" fill="${halfColor}" clip-path="url(#hc${i}x)"/>
+        </svg>
+        <button type="button" class="star-zone star-zone-half"
           onclick="UI.setRating(${half})"
           onmouseenter="UI.previewRating(${half})"
-          onmouseleave="UI.clearPreview()">
-          <svg viewBox="0 0 20 20" width="26" height="26"><defs><clipPath id="hc${i}"><rect x="0" y="0" width="10" height="20"/></clipPath></defs><polygon points="10,2 12.9,7.6 19,8.5 14.5,12.9 15.6,19 10,16 4.4,19 5.5,12.9 1,8.5 7.1,7.6" fill="var(--star-empty)"/><polygon points="10,2 12.9,7.6 19,8.5 14.5,12.9 15.6,19 10,16 4.4,19 5.5,12.9 1,8.5 7.1,7.6" fill="${filledFull || filledHalf ? "var(--accent)" : "none"}" clip-path="url(#hc${i})"/></svg>
-        </button>
-        <button type="button" class="star-btn star-full-btn ${filledFull ? "lit" : ""}"
+          onmouseleave="UI.clearPreview()"></button>
+        <button type="button" class="star-zone star-zone-full"
           onclick="UI.setRating(${full})"
           onmouseenter="UI.previewRating(${full})"
-          onmouseleave="UI.clearPreview()">
-          <svg viewBox="0 0 20 20" width="26" height="26"><polygon points="10,2 12.9,7.6 19,8.5 14.5,12.9 15.6,19 10,16 4.4,19 5.5,12.9 1,8.5 7.1,7.6" fill="${filledFull ? "var(--accent)" : "var(--star-empty)"}"/></svg>
-        </button>
+          onmouseleave="UI.clearPreview()"></button>
       </span>`;
   }).join("");
 
   if (current) showRatingLabel(current);
 
-  // Touch swipe
   wrap.addEventListener("touchmove", (e) => {
     e.preventDefault();
     const touch = e.touches[0];
@@ -950,16 +954,15 @@ function setRating(n) {
   showRatingLabel(n);
 }
 function previewRating(n) {
-  const wraps = document.querySelectorAll("#rating-stars .star-wrap svg");
-  wraps.forEach((svg, i) => {
+  document.querySelectorAll("#rating-stars .star-wrap").forEach((wrap, i) => {
     const full = (i + 1) * 2;
     const half = full - 1;
-    const pct = n >= full ? "100%" : n >= half ? "50%" : "0%";
-    const grad = svg.querySelector("linearGradient");
-    if (grad) {
-      grad.children[0].setAttribute("offset", pct);
-      grad.children[1].setAttribute("offset", pct);
-    }
+    const filledFull = n >= full;
+    const filledHalf = n >= half && n < full;
+    const bg   = wrap.querySelector(".star-bg");
+    const hf   = wrap.querySelector(".star-half-fill");
+    if (bg) bg.setAttribute("fill", filledFull ? "var(--accent)" : "var(--star-empty)");
+    if (hf) hf.setAttribute("fill", (filledFull || filledHalf) ? "var(--accent)" : "none");
   });
   showRatingLabel(n);
 }
