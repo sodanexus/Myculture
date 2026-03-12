@@ -1,23 +1,16 @@
 // ============================================================
 // sw.js — Service Worker Kulturo
-// Cache-first pour les assets statiques, network-first pour Supabase
+// Network-first pour JS/CSS/HTML, cache-first pour images/fonts
 // ============================================================
 
-const CACHE_NAME = "kulturo-v2";
+const CACHE_NAME = "kulturo-v3";
 const STATIC_ASSETS = [
-  "/Kulturo/",
-  "/Kulturo/index.html",
-  "/Kulturo/style.css",
-  "/Kulturo/app.js",
-  "/Kulturo/api.js",
-  "/Kulturo/supabase.js",
-  "/Kulturo/config.js",
   "/Kulturo/icon-192.png",
   "/Kulturo/icon-512.png",
   "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=Playfair+Display:wght@700;900&display=swap"
 ];
 
-// Install — met en cache les assets statiques
+// Install — met en cache uniquement les assets statiques lourds
 self.addEventListener("install", e => {
   e.waitUntil(
     caches.open(CACHE_NAME)
@@ -42,12 +35,14 @@ self.addEventListener("activate", e => {
 self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
 
-  // Supabase & APIs externes → network-first (pas de cache)
+  // Supabase & APIs externes → network-only
   if (
     url.hostname.includes("supabase.co") ||
     url.hostname.includes("api.themoviedb.org") ||
     url.hostname.includes("openlibrary.org") ||
-    url.hostname.includes("api.groq.com")
+    url.hostname.includes("api.groq.com") ||
+    url.hostname.includes("twitch.tv") ||
+    url.hostname.includes("igdb.com")
   ) {
     e.respondWith(
       fetch(e.request).catch(() =>
@@ -59,7 +54,27 @@ self.addEventListener("fetch", e => {
     return;
   }
 
-  // Assets statiques → cache-first
+  // JS, CSS, HTML → network-first (toujours à jour)
+  if (
+    url.pathname.endsWith(".js") ||
+    url.pathname.endsWith(".css") ||
+    url.pathname.endsWith(".html") ||
+    url.pathname === "/Kulturo/" ||
+    url.pathname === "/Kulturo"
+  ) {
+    e.respondWith(
+      fetch(e.request)
+        .then(response => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+          return response;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Images, fonts → cache-first
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
