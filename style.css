@@ -331,13 +331,9 @@ h3 { font-size: 1.1rem; font-weight: 700; }
 /* ── Grille cartes ────────────────────────────────────────── */
 #cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: .8rem;
   transition: gap .2s;
-}
-#cards-grid.cards-small {
-  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  gap: .6rem;
 }
 
 /* ── Carte média ──────────────────────────────────────────── */
@@ -429,9 +425,6 @@ h3 { font-size: 1.1rem; font-weight: 700; }
   45%       { transform: scale(1.15);}
   60%       { transform: scale(1);   }
 }
-#cards-grid.cards-small .card-stars { font-size: .72rem; }
-#cards-grid.cards-small .card-heart { font-size: .85rem; }
-#cards-grid.cards-small .card-bottom { padding: 0; }
 
 /* ── Badges ───────────────────────────────────────────────── */
 .badge {
@@ -1674,9 +1667,8 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
     overflow-y: visible;
   }
 
-  /* Grille mobile — medium par défaut, small en option */
+  /* Grille mobile équilibrée */
   #cards-grid { grid-template-columns: repeat(3, 1fr); gap: .6rem; }
-  #cards-grid.cards-small { grid-template-columns: repeat(4, 1fr); gap: .4rem; }
 
   /* Page header compact */
   .page-header { margin-bottom: 1rem; }
