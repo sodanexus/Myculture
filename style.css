@@ -381,38 +381,24 @@ h3 { font-size: 1.1rem; font-weight: 700; }
   filter: saturate(1);
 }
 
-/* En cours — légèrement surexposé, vivant */
+/* En cours / En pause / Abandonné — grisé comme wishlist */
 .media-card.is-playing .card-cover,
-.media-card.is-playing .card-cover-placeholder {
-  filter: saturate(1.15) brightness(1.05);
-}
-.media-card.is-playing:hover .card-cover,
-.media-card.is-playing:hover .card-cover-placeholder {
-  filter: saturate(1.2) brightness(1.1);
-}
-
-/* En pause — froid et atténué */
+.media-card.is-playing .card-cover-placeholder,
 .media-card.is-paused .card-cover,
-.media-card.is-paused .card-cover-placeholder {
-  opacity: .6;
-  filter: saturate(0.4) hue-rotate(200deg);
-}
-.media-card.is-paused:hover .card-cover,
-.media-card.is-paused:hover .card-cover-placeholder {
-  opacity: 1;
-  filter: saturate(1) hue-rotate(0deg);
-}
-
-/* Abandonné — quasi noir et blanc, très éteint */
+.media-card.is-paused .card-cover-placeholder,
 .media-card.is-dropped .card-cover,
 .media-card.is-dropped .card-cover-placeholder {
-  opacity: .35;
-  filter: saturate(0) brightness(0.8);
+  opacity: .45;
+  filter: saturate(0.2);
 }
+.media-card.is-playing:hover .card-cover,
+.media-card.is-playing:hover .card-cover-placeholder,
+.media-card.is-paused:hover .card-cover,
+.media-card.is-paused:hover .card-cover-placeholder,
 .media-card.is-dropped:hover .card-cover,
 .media-card.is-dropped:hover .card-cover-placeholder {
   opacity: 1;
-  filter: saturate(1) brightness(1);
+  filter: saturate(1);
 }
 .media-card:hover .card-cover {
   transform: scale(1.04);
@@ -2868,3 +2854,25 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   padding: 0;
 }
 .detail-synopsis-toggle:hover { text-decoration: underline; }
+
+/* ── Label statut sur les cards ─────────────────────────────── */
+.card-status-label {
+  position: absolute;
+  bottom: 2rem;
+  left: .5rem;
+  background: rgba(13,13,15,.75);
+  backdrop-filter: blur(6px);
+  color: var(--text-2);
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  padding: .2rem .45rem;
+  border-radius: 99px;
+  border: 1px solid rgba(255,255,255,.08);
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity .2s ease;
+}
+.media-card:hover .card-status-label {
+  opacity: 0;
+}
