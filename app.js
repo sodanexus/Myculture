@@ -1851,7 +1851,13 @@ function renderDetailBody(e) {
 
   // ── Synopsis ──
   if (e.description) {
-    html += section("Synopsis", `<p class="detail-synopsis-text">${esc(e.description)}</p>`);
+    const synId = `syn-${e.id}`;
+    html += section("Synopsis",
+      `<div class="detail-synopsis-wrap" id="${synId}">
+        <p class="detail-synopsis-text">${esc(e.description)}</p>
+        <button class="detail-synopsis-toggle" onclick="UI.toggleSynopsis('${synId}')">Voir plus</button>
+      </div>`
+    );
   }
 
   // ── Films & Séries ──
@@ -2404,6 +2410,14 @@ window.UI = {
     root.insertAdjacentHTML("beforeend", _buildModal());
   },
 
+
+  toggleSynopsis: (id) => {
+    const wrap = document.getElementById(id);
+    if (!wrap) return;
+    const isExpanded = wrap.classList.toggle("expanded");
+    const btn = wrap.querySelector(".detail-synopsis-toggle");
+    if (btn) btn.textContent = isExpanded ? "Voir moins" : "Voir plus";
+  },
 
   applyFilters: () => {
     const count = filterEntries(State.entries || []).length;
