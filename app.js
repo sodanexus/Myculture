@@ -190,13 +190,12 @@ function renderApp() {
             <button class="category-tab" onclick="UI.setTypeFilter('game')">🎮 Jeux</button>
             <button class="category-tab" onclick="UI.setTypeFilter('movie')">🎬 Films</button>
             <button class="category-tab" onclick="UI.setTypeFilter('book')">📚 Livres</button>
-            <button class="category-tab" onclick="UI.navTo('fav')">♥ Favoris</button>
-          </div>
-          <div class="filter-actions">
-            <button class="btn-filter-toggle" id="btn-filter-toggle" onclick="UI.toggleFilterDrawer()" title="Filtrer">
-              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-              <span id="filter-active-label"></span>
+            <button class="category-tab" id="btn-filter-toggle" onclick="UI.toggleFilterDrawer()">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+              Filtres
             </button>
+          </div>
+          <div class="filter-actions" style="display:none">
           </div>
         </div>
         <div id="cards-grid"></div>
@@ -445,6 +444,7 @@ function _updateFilterToggleLabel() {
   const label = document.getElementById("filter-active-label");
   if (!label) return;
   const parts = [];
+  if (State.filters.favorite) parts.push("♥");
   if (State.filters.status !== "all") parts.push(STATUS_LABELS[State.filters.status]);
   if (State.filters.sort !== "created_at") parts.push({date_finished:"Date fin",rating:"Note",title:"Titre"}[State.filters.sort] || "");
   label.textContent = parts.length ? ` · ${parts.join(", ")}` : "";
@@ -2227,6 +2227,9 @@ window.UI = {
         onclick="UI.setStatusChip('${s}')">${label}</button>`;
     }).join("");
 
+    const favChip = `<button class="filter-chip ${State.filters.favorite ? "active" : ""}"
+      onclick="UI.toggleFavFilter()">♥ Coups de cœur</button>`;
+
     const sortChips = sorts.map(([v, l]) =>
       `<button class="filter-chip ${State.filters.sort === v ? "active" : ""}"
         onclick="UI.setSort('${v}')">${l}</button>`
@@ -2240,6 +2243,10 @@ window.UI = {
             <button class="btn-icon" onclick="UI.closeFilterModal()">${iconX()}</button>
           </div>
           <div class="modal-body">
+            <div class="filter-modal-section">
+              <div class="filter-modal-label">Coup de cœur</div>
+              <div class="filter-modal-chips">${favChip}</div>
+            </div>
             <div class="filter-modal-section">
               <div class="filter-modal-label">Statut</div>
               <div class="filter-modal-chips" id="fm-status-chips">${statusChips}</div>
@@ -2267,9 +2274,19 @@ window.UI = {
     setTimeout(() => overlay.remove(), 200);
   },
 
+  toggleFavFilter: () => {
+    State.filters.favorite = !State.filters.favorite;
+    renderCards();
+    _updateFilterToggleLabel();
+    // Update chip in modal
+    const favBtn = document.querySelector(".filter-modal-chips .filter-chip");
+    if (favBtn) favBtn.classList.toggle("active", State.filters.favorite);
+  },
+
   resetFilters: () => {
     State.filters.status = "all";
     State.filters.sort = "created_at";
+    State.filters.favorite = false;
     renderCards();
     buildFilterBar();
     _updateFilterToggleLabel();
