@@ -911,9 +911,6 @@ function _renderWizard() {
     document.querySelector(".modal-body").appendChild(hiddenType);
     document.querySelector(".modal-body").appendChild(hiddenTitle);
     setupApiSearch();
-    // Intercept fillFromApi to store in wizard state
-    const origFill = window._origFillFromApi || fillFromApi;
-    window._origFillFromApi = origFill;
     setTimeout(() => document.getElementById("f-api-search")?.focus(), 100);
   }
 
@@ -2028,36 +2025,24 @@ function quickAdd(title) {
 function quickAddFromResult(idx) {
   const result = window._quickApiResults?.[idx];
   if (!result) return;
+
+  // Ferme le dropdown de recherche
   const qa = document.getElementById("search-quick-add");
   if (qa) qa.style.display = "none";
   const searchEl = document.getElementById("global-search");
   if (searchEl) searchEl.value = "";
-  _currentRating = result.rating || 0;
+
+  // Ouvre le wizard directement à l'étape 3 avec tout pré-rempli
+  _currentRating = 0;
   window._apiSelected = result;
-  // Sélectionne le bon type avant d'ouvrir
-  openModal(null, result.title);
-  // Pré-remplit les champs après que le modal soit dans le DOM
-  requestAnimationFrame(() => {
-    const set = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = v; };
-    // Set type first (triggers API label update)
-    const typeEl = document.getElementById("f-type");
-    if (typeEl && result.media_type) {
-      typeEl.value = result.media_type;
-      updateApiAvailLabel(result.media_type);
-    }
-    set("f-title",    result.title);
-    set("f-cover",    result.cover_url);
-    set("f-genre",    result.genre);
-    set("f-author",   result.author);
-    set("f-platform", result.platform);
-    // Ouvre les détails avancés si on a des infos
-    if (result.cover_url || result.genre || result.author) {
-      const details = document.querySelector(".advanced-details");
-      if (details) details.open = true;
-    }
-    // Note
-    if (result.rating) buildRatingStars(result.rating);
-  });
+  _wizardState = {
+    step: 3,
+    type: result.media_type || "movie",
+    title: result.title,
+    apiSelected: result,
+    _status: "finished",
+  };
+  _renderWizard();
 }
 
 
@@ -2200,7 +2185,6 @@ window.UI = {
   saveUsername,
   showRatingLabel,
   hideRatingLabel,
-  onTypeChange:    () => { const t = document.getElementById("f-type")?.value; updateApiAvailLabel(t); },
   setModalType: (type) => {
     const hidden = document.getElementById("f-type");
     if (hidden) hidden.value = type;
