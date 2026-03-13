@@ -1668,7 +1668,11 @@ function discoverCardHTML(it, idx) {
           ${it.release_year ? `<span style="font-size:.72rem;color:var(--text-3)">${it.release_year}</span>` : ""}
         </div>
         ${it.author ? `<div style="font-size:.75rem;color:var(--text-3);margin-top:.2rem">${esc(it.author)}</div>` : ""}
-        ${it.groq_reason ? `<div class="discover-reason">✦ ${esc(it.groq_reason)}</div>` : it.description ? `<div style="font-size:.75rem;color:var(--text-2);margin-top:.35rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(it.description)}</div>` : ""}
+        ${it.groq_reason
+          ? `<div class="discover-reason"><span class="discover-reason-icon">✦</span>${esc(it.groq_reason)}</div>`
+          : it.description
+          ? `<div class="discover-desc">${esc(it.description)}</div>`
+          : ""}
         <div style="display:flex;gap:.4rem;margin-top:.75rem">
           <button class="btn btn-secondary btn-sm" style="flex:1" onclick="UI.addToWishlist(${idx})">+ Wishlist</button>
           <button class="btn btn-ghost btn-sm" title="Pas intéressé" onclick="UI.ignoreDiscover(${idx})">✕</button>
