@@ -610,7 +610,7 @@ async function renderDashboard() {
     try {
       const p = await Profiles.get(State.user.id);
       cachedUsername = p?.username || "";
-    } catch {}
+    } catch(e) {}
   }
 
   // Section identité (username) en haut
@@ -1109,7 +1109,7 @@ async function saveEntry() {
             description: s.reason, source_api: "manual", groq_reason: s.reason,
           });
         }
-      } catch {}
+      } catch(e) {}
     }));
   } else {
     // Fallback : recherche par genres/auteurs si Groq indisponible
@@ -1131,7 +1131,7 @@ async function saveEntry() {
             if (!existingTitles.has(it.title.toLowerCase()))
               allResults.push({ ...it, media_type: type });
           });
-        } catch {}
+        } catch(e) {}
       })
     ));
   }
@@ -1350,7 +1350,7 @@ async function openDetailPanel(id) {
           Media.update(e.id, { description: match.description }).catch(() => {});
         }
       }
-    } catch {}
+    } catch(e) {}
   }
 }
 
