@@ -1611,7 +1611,9 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   z-index: 300;
-  overflow: hidden;
+  max-height: 70vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   animation: slideDown .15s var(--ease-spring);
 }
 @keyframes slideDown {
