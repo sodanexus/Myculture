@@ -2635,3 +2635,74 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   .wz-type-btn { padding: 1.5rem .5rem; }
   .wz-type-icon { font-size: 2.25rem; }
 }
+
+/* ── Filter bar fusionnée ───────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem var(--content-px);
+  border-bottom: 1px solid var(--border);
+  overflow: visible;
+}
+.filter-bar .category-tabs {
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+  display: flex;
+  gap: .4rem;
+  padding: .15rem 0;
+}
+.filter-bar .category-tabs::-webkit-scrollbar { display: none; }
+.filter-actions { flex-shrink: 0; }
+
+.btn-filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  padding: .4rem .7rem;
+  background: var(--bg-3);
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: .75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s ease;
+  white-space: nowrap;
+}
+.btn-filter-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.btn-filter-toggle.has-filter { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.btn-filter-toggle.open { border-color: var(--accent); color: var(--accent); }
+
+/* Drawer filtres */
+.filter-drawer {
+  padding: .75rem var(--content-px) .5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-2);
+  animation: fadeSlideIn .2s ease both;
+}
+.filter-drawer-inner {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+.filter-drawer-section {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+.filter-drawer-label {
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  min-width: 56px;
+}
+.filter-drawer-chips {
+  display: flex;
+  gap: .35rem;
+  flex-wrap: wrap;
+}
