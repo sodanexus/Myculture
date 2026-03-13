@@ -111,11 +111,11 @@ function renderAuthPage() {
         <div class="auth-form" id="auth-form">
           <div class="form-group">
             <label>Email</label>
-            <input type="email" id="auth-email" placeholder="vous@exemple.com" />
+            <input type="email" id="auth-email" placeholder="vous@exemple.com" onkeydown="if(event.key==='Enter') UI.handleAuth()" />
           </div>
           <div class="form-group">
             <label>Mot de passe</label>
-            <input type="password" id="auth-password" placeholder="••••••••" />
+            <input type="password" id="auth-password" placeholder="••••••••" onkeydown="if(event.key==='Enter') UI.handleAuth()" />
           </div>
           <button class="btn btn-primary" style="width:100%" onclick="UI.handleAuth()">Se connecter</button>
         </div>
