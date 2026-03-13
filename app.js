@@ -512,7 +512,7 @@ function filterEntries(entries) {
   if (f.type    !== "all") res = res.filter(e => e.media_type === f.type);
   if (f.status  !== "all") res = res.filter(e => e.status    === f.status);
   if (f.favorite)          res = res.filter(e => e.is_favorite);
-  if ((f.minRating||0) > 0) res = res.filter(e => (e.rating||0) >= f.minRating);
+  if ((f.minRating||0) > 0) res = res.filter(e => e.rating != null && e.rating >= f.minRating);
   if (f.search)  res = res.filter(e => e.title.toLowerCase().includes(f.search.toLowerCase()));
   // Tri local
   res.sort((a, b) => {
@@ -2277,7 +2277,7 @@ window.UI = {
                 <div class="filter-modal-chips" id="fm-status-chips">${statusChips}</div>
               </div>
               <div class="filter-modal-section">
-                <div class="filter-modal-label">Note minimale <span id="fm-rating-label" class="filter-rating-label">${(State.filters.minRating||0) > 0 ? `— ${RATING_LABELS[State.filters.minRating]}` : ""}</span></div>
+                <div class="filter-modal-label">Note minimale <span id="fm-rating-label" class="filter-rating-label">${(State.filters.minRating||0) > 0 ? `≥ ${RATING_LABELS[State.filters.minRating]}` : ""}</span></div>
                 <div class="filter-rating-stars" id="fm-rating-stars"></div>
               </div>
               <div class="filter-modal-section">
@@ -2352,7 +2352,7 @@ window.UI = {
       if (hf) hf.setAttribute("fill", (n >= full || (n >= half && n < full)) ? "var(--accent)" : "none");
     });
     const lbl = document.getElementById("fm-rating-label");
-    if (lbl) lbl.textContent = n > 0 ? `— ${RATING_LABELS[n]}` : "";
+    if (lbl) lbl.textContent = n > 0 ? `≥ ${RATING_LABELS[n]}` : "";
   },
 
   applyFilters: () => {
@@ -2384,7 +2384,7 @@ window.UI = {
     renderCards(); _updateFilterToggleLabel(); _updateFilterModalHeader(); _updateResetBtn();
     UI._buildFilterRatingStarsInternal();
     const lbl = document.getElementById("fm-rating-label");
-    if (lbl) lbl.textContent = r > 0 ? `— ${RATING_LABELS[r]}` : "";
+    if (lbl) lbl.textContent = r > 0 ? `≥ ${RATING_LABELS[r]}` : "";
   },
 
   resetFilters: () => {
