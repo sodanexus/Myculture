@@ -2703,3 +2703,32 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   margin-left: .35rem;
   vertical-align: middle;
 }
+
+/* Étoiles filtre */
+.filter-rating-stars {
+  display: flex;
+  align-items: center;
+  gap: .1rem;
+  padding: .25rem 0;
+  touch-action: none;
+  user-select: none;
+}
+.filter-rating-label {
+  font-size: .8rem;
+  color: var(--accent);
+  font-weight: 500;
+  margin-left: .3rem;
+}
+.filter-rating-clear {
+  margin-left: .5rem;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 22px; height: 22px;
+  font-size: .7rem;
+  color: var(--text-3);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s ease;
+}
+.filter-rating-clear:hover { border-color: var(--danger); color: var(--danger); }
