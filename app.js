@@ -3,7 +3,7 @@
 // ============================================================
 
 import { initSupabase, isConfigured, Auth, Media, computeStats, Profiles, Activity } from "./supabase.js";
-import { searchMedia, apiAvailability }                            from "./api.js";
+import { searchMedia, apiAvailability, TMDbDetails, IGDBDetails, OpenLibraryDetails } from "./api.js";
 
 // ── État global ──────────────────────────────────────────────
 const State = {
@@ -1812,17 +1812,7 @@ function renderDetailPanel(e, description, backdropUrl = null) {
           </div>
         </div>
 
-        <div class="detail-body">
-          <div class="detail-meta">
-            ${metaRow("Genre", e.genre)}
-            ${metaRow("Auteur", e.author)}
-            ${metaRow("Plateforme", e.platform)}
-            ${metaRow("Année", e.release_year)}
-            ${metaRow("Ajouté le", e.created_at ? new Date(e.created_at).toLocaleDateString("fr-FR") : null)}
-          </div>
-          ${synopsisHTML}
-          ${e.notes ? `<div class="detail-notes"><div class="detail-notes-label">Notes personnelles</div><p>${esc(e.notes)}</p></div>` : ""}
-        </div>
+        <div class="detail-body">${renderDetailBody(e)}</div>
 
         <div class="modal-footer">
           <button class="btn btn-danger btn-sm" onclick="UI.deleteEntry('${e.id}')">Supprimer</button>
@@ -1835,88 +1825,148 @@ function renderDetailPanel(e, description, backdropUrl = null) {
     </div>`;
 }
 
+// ── Body enrichi de la fiche détail ──────────────────────────
+function renderDetailBody(e) {
+  const metaRow = (label, value) => value
+    ? `<div class="detail-meta-row"><span class="detail-meta-label">${label}</span><span class="detail-meta-value">${esc(String(value))}</span></div>`
+    : "";
+
+  const section = (label, html) =>
+    `<div class="detail-section">
+      <div class="detail-section-label">${label}</div>
+      <div class="detail-section-content">${html}</div>
+    </div>`;
+
+  const chip = (txt) => `<span class="detail-chip">${esc(txt)}</span>`;
+
+  let html = "";
+
+  // ── Méta de base ──
+  const baseMeta = [
+    metaRow("Genre",    e.genre),
+    metaRow("Année",    e.release_year),
+    metaRow("Ajouté",   e.created_at ? new Date(e.created_at).toLocaleDateString("fr-FR") : null),
+  ].filter(Boolean).join("");
+  if (baseMeta) html += `<div class="detail-meta">${baseMeta}</div>`;
+
+  // ── Synopsis ──
+  if (e.description) {
+    html += section("Synopsis", `<p class="detail-synopsis-text">${esc(e.description)}</p>`);
+  }
+
+  // ── Films & Séries ──
+  if (e.media_type === "movie") {
+    const filmMeta = [
+      metaRow(e.subtype === "tv" ? "Créateur" : "Réalisateur", e.directors),
+      metaRow("Durée",     e.duration    ? `${e.duration} min` : null),
+      metaRow("Saisons",   e.seasons_count  ? `${e.seasons_count} saison${e.seasons_count > 1 ? "s" : ""}` : null),
+      metaRow("Épisodes",  e.episodes_count ? `${e.episodes_count} épisodes` : null),
+      metaRow("Statut",    e.air_status),
+    ].filter(Boolean).join("");
+    if (filmMeta) html += `<div class="detail-meta">${filmMeta}</div>`;
+
+    if (e.cast_members) {
+      const cast = e.cast_members.split(",").map(n => chip(n.trim())).join("");
+      html += section("Casting", `<div class="detail-chips">${cast}</div>`);
+    }
+
+    if (e.watch_providers) {
+      const providers = e.watch_providers.split(",").map(n => chip(n.trim())).join("");
+      html += section("Disponible sur", `<div class="detail-chips">${providers}</div>`);
+    }
+  }
+
+  // ── Jeux ──
+  if (e.media_type === "game") {
+    const gameMeta = [
+      metaRow("Développeur", e.developer || e.author),
+      metaRow("Éditeur",     e.publisher),
+      metaRow("Plateforme",  e.platform),
+    ].filter(Boolean).join("");
+    if (gameMeta) html += `<div class="detail-meta">${gameMeta}</div>`;
+  }
+
+  // ── Livres ──
+  if (e.media_type === "book") {
+    const bookMeta = [
+      metaRow("Auteur",   e.author),
+      metaRow("Éditeur",  e.publisher),
+      metaRow("Pages",    e.page_count),
+      metaRow("ISBN",     e.isbn),
+    ].filter(Boolean).join("");
+    if (bookMeta) html += `<div class="detail-meta">${bookMeta}</div>`;
+  }
+
+  // ── Notes perso ──
+  if (e.notes) {
+    html += section("Notes personnelles", `<p class="detail-synopsis-text">${esc(e.notes)}</p>`);
+  }
+
+  return html || "";
+}
+
 async function openDetailPanel(id) {
   const e = State.entries.find(x => x.id === id);
   if (!e) return;
 
-  // Affichage immédiat sans backdrop
-  renderDetailPanel(e, e.description || null, e.backdrop_url || null);
+  // Affichage immédiat avec ce qu'on a déjà en base
+  renderDetailPanel(e);
 
-  // Récupération backdrop + synopsis si film/série TMDb
-  if (e.media_type === "movie" && e.external_id) {
-    try {
-      const key  = CONFIG?.tmdb?.apiKey;
-      const base = CONFIG?.tmdb?.baseUrl;
-      if (key && base) {
-        // Films = /movie/, Séries = /tv/
-        const endpoint = e.subtype === "tv" ? "tv" : "movie";
-        const res = await fetch(`${base}/${endpoint}/${e.external_id}?api_key=${key}&language=fr-FR`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const backdrop = data.backdrop_path
-          ? `https://image.tmdb.org/t/p/w1280${data.backdrop_path}`
-          : null;
-        const description = data.overview || e.description || null;
+  // Si déjà enrichi (directors stocké = déjà fetchés), on ne refetch pas
+  if (e._detailsFetched) return;
+  e._detailsFetched = true;
 
-        if (backdrop && backdrop !== e.backdrop_url) {
-          e.backdrop_url = backdrop;
-          Media.update(e.id, { backdrop_url: backdrop }).catch(() => {});
-        }
-        if (description && !e.description) {
-          e.description = description;
-          Media.update(e.id, { description }).catch(() => {});
-        }
+  try {
+    let details = null;
 
-        // Injecter le backdrop via un élément superposé qui fade in
-        const bdEl = document.querySelector(".detail-backdrop");
-        if (bdEl && backdrop) {
-          const img = new Image();
-          img.onload = () => {
-            if (!document.querySelector(".detail-backdrop")) return;
-            // Crée une couche par-dessus le fallback
-            const layer = document.createElement("div");
-            layer.className = "detail-backdrop-layer";
-            layer.style.backgroundImage = `url('${backdrop}')`;
-            layer.style.opacity = "0";
-            bdEl.insertBefore(layer, bdEl.firstChild);
-            requestAnimationFrame(() => {
-              requestAnimationFrame(() => {
-                layer.style.opacity = "1";
-              });
-            });
-            bdEl.classList.add("has-backdrop");
-          };
-          img.src = backdrop;
-        }
-        // Injecter le synopsis sans re-render
-        if (description) {
-          const synEl = document.querySelector(".detail-synopsis p");
-          if (synEl) { synEl.textContent = description; }
-          else {
-            const body = document.querySelector(".detail-body");
-            const notes = document.querySelector(".detail-notes");
-            if (body) {
-              const div = document.createElement("div");
-              div.className = "detail-synopsis";
-              div.innerHTML = `<div class="detail-notes-label">Synopsis</div><p>${esc(description)}</p>`;
-              body.insertBefore(div, notes || null);
-            }
-          }
-        }
+    if (e.media_type === "movie" && e.external_id) {
+      details = await TMDbDetails.fetch(e.external_id, e.subtype || "movie");
+    } else if (e.media_type === "game" && e.external_id) {
+      details = await IGDBDetails.fetch(e.external_id);
+    } else if (e.media_type === "book" && e.external_id) {
+      details = await OpenLibraryDetails.fetch(e.external_id);
+    }
+
+    if (!details) return;
+
+    // Ne sauvegarder que les champs nouveaux (ne pas écraser ce que l'utilisateur a saisi)
+    const toSave = {};
+    const fields = ["backdrop_url","description","directors","cast_members","duration",
+                    "seasons_count","episodes_count","air_status","watch_providers",
+                    "developer","publisher","page_count","isbn","platform"];
+    for (const f of fields) {
+      if (details[f] != null && !e[f]) {
+        e[f] = details[f];
+        toSave[f] = details[f];
       }
-    } catch(err) { console.warn("Backdrop fetch error:", err); }
-  } else if (!e.description && e.title) {
-    // Fallback recherche pour description (jeux, livres, séries sans external_id)
-    try {
-      const items = await searchMedia(e.title, e.media_type);
-      const match = items.find(it => it.title.toLowerCase() === e.title.toLowerCase()) || items[0];
-      if (match?.description) {
-        e.description = match.description;
-        Media.update(e.id, { description: match.description }).catch(() => {});
-        renderDetailPanel(e, match.description, e.backdrop_url || null);
-      }
-    } catch {}
-  }
+    }
+    if (Object.keys(toSave).length) {
+      Media.update(e.id, toSave).catch(() => {});
+    }
+
+    // Injecter le backdrop en fondu
+    const backdrop = e.backdrop_url;
+    const bdEl = document.querySelector(".detail-backdrop");
+    if (bdEl && backdrop) {
+      const img = new Image();
+      img.onload = () => {
+        if (!document.querySelector(".detail-backdrop")) return;
+        const layer = document.createElement("div");
+        layer.className = "detail-backdrop-layer";
+        layer.style.backgroundImage = `url('${backdrop}')`;
+        layer.style.opacity = "0";
+        bdEl.insertBefore(layer, bdEl.firstChild);
+        requestAnimationFrame(() => requestAnimationFrame(() => { layer.style.opacity = "1"; }));
+        bdEl.classList.add("has-backdrop");
+      };
+      img.src = backdrop;
+    }
+
+    // Re-render le body enrichi (pas le backdrop — déjà géré ci-dessus)
+    const body = document.querySelector(".detail-body");
+    if (body) body.innerHTML = renderDetailBody(e);
+
+  } catch(err) { console.warn("[Detail] fetch error:", err); }
 }
 
 
