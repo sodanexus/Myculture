@@ -765,99 +765,265 @@ function openModal(entry = null, prefillTitle = null) {
   const isEdit = !!entry;
   State.editingId = isEdit ? entry.id : null;
 
-  const availability = apiAvailability();
+  // Mode édition : modal classique directe
+  if (isEdit) {
+    _openModalClassic(entry);
+    return;
+  }
 
+  // Nouveau : wizard 3 étapes
+  _wizardState = {
+    step: 1,
+    type: "movie",
+    title: prefillTitle || "",
+    apiSelected: null,
+    rating: 0,
+  };
+  _currentRating = 0;
+  window._apiSelected = null;
+  _renderWizard();
+}
+
+let _wizardState = null;
+
+function _renderWizard() {
+  const s = _wizardState;
+  const root = document.getElementById("modal-root");
+
+  const steps = ["C\'est quoi ?", "On cherche", "Ton avis"];
+  const progressHTML = steps.map((label, i) => `
+    <div class="wz-step ${i + 1 === s.step ? "active" : i + 1 < s.step ? "done" : ""}">
+      <div class="wz-dot">${i + 1 < s.step ? "✓" : i + 1}</div>
+      <span>${label}</span>
+    </div>`).join('<div class="wz-line"></div>');
+
+  let bodyHTML = "";
+  let footerHTML = "";
+
+  if (s.step === 1) {
+    bodyHTML = `
+      <p class="wz-hint">Qu'est-ce que tu veux ajouter à ta collection ?</p>
+      <div class="wz-type-grid">
+        <button type="button" class="wz-type-btn ${s.type === "movie" ? "active" : ""}" onclick="UI.wzSetType('movie')">
+          <span class="wz-type-icon">🎬</span>
+          <span class="wz-type-label">Film ou Série</span>
+        </button>
+        <button type="button" class="wz-type-btn ${s.type === "game" ? "active" : ""}" onclick="UI.wzSetType('game')">
+          <span class="wz-type-icon">🎮</span>
+          <span class="wz-type-label">Jeu vidéo</span>
+        </button>
+        <button type="button" class="wz-type-btn ${s.type === "book" ? "active" : ""}" onclick="UI.wzSetType('book')">
+          <span class="wz-type-icon">📚</span>
+          <span class="wz-type-label">Livre</span>
+        </button>
+      </div>`;
+    footerHTML = `
+      <button class="btn btn-secondary" onclick="UI.closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="UI.wzNext()">C'est parti →</button>`;
+  }
+
+  else if (s.step === 2) {
+    const icon = { movie: "🎬", game: "🎮", book: "📚" }[s.type];
+    const label = { movie: "film ou série", game: "jeu vidéo", book: "livre" }[s.type];
+    bodyHTML = `
+      <p class="wz-hint">Quel ${label} tu veux ajouter ? ${icon}</p>
+      <div class="api-search-wrap">
+        <input type="text" id="f-api-search" placeholder="Tape le titre…" autocomplete="off" value="${esc(s.title)}" />
+        <div class="api-results" id="api-results" style="display:none"></div>
+      </div>
+      <div id="wz-selected-preview" class="wz-selected-preview" style="display:${s.apiSelected ? "flex" : "none"}">
+        ${s.apiSelected ? `
+          ${s.apiSelected.cover_url ? `<img src="${esc(s.apiSelected.cover_url)}" class="wz-preview-cover" alt="">` : ""}
+          <div>
+            <div class="wz-preview-title">${esc(s.apiSelected.title)}</div>
+            <div class="wz-preview-sub">${s.apiSelected.release_year || ""}</div>
+          </div>
+          <button type="button" class="wz-clear-btn" onclick="UI.wzClearSelected()">✕</button>
+        ` : ""}
+      </div>
+      <p class="wz-skip-hint">Pas dans les résultats ? Tape juste le titre et continue.</p>`;
+    footerHTML = `
+      <button class="btn btn-secondary" onclick="UI.wzBack()">← Retour</button>
+      <button class="btn btn-primary" onclick="UI.wzNext()">Suivant →</button>`;
+  }
+
+  else if (s.step === 3) {
+    const title = s.apiSelected?.title || s.title;
+    const cover = s.apiSelected?.cover_url;
+    bodyHTML = `
+      <div class="wz-step3-header">
+        ${cover ? `<img src="${esc(cover)}" class="wz-step3-cover" alt="">` : ""}
+        <div class="wz-step3-title">${esc(title)}</div>
+      </div>
+      <div class="form-group">
+        <label>C'est où t'en es ? 👀</label>
+        <div class="wz-status-grid">
+          ${[
+            ["finished","✅","Terminé"],
+            ["playing","▶️","En cours"],
+            ["wishlist","🔖","Dans ma liste"],
+            ["paused","⏸️","En pause"],
+            ["dropped","❌","Abandonné"],
+          ].map(([val, ico, lbl]) => `
+            <button type="button" class="wz-status-btn ${val === "finished" ? "active" : ""}" data-status="${val}" onclick="UI.wzSetStatus('${val}')">
+              ${ico} ${lbl}
+            </button>`).join("")}
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Ta note <span id="rating-tooltip" class="rating-tooltip-label"></span></label>
+        <div class="rating-stars" id="rating-stars"></div>
+      </div>
+      <div class="form-group">
+        <label>Tes impressions ✍️ <span style="color:var(--text-3);font-weight:400">(optionnel)</span></label>
+        <textarea id="f-notes" placeholder="Qu'est-ce que t'en as pensé ?">${esc("")}</textarea>
+      </div>
+      <label class="toggle-row">
+        <span class="toggle-label">♥ Coup de cœur</span>
+        <span class="toggle-switch">
+          <input type="checkbox" id="f-favorite" />
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </span>
+      </label>`;
+    footerHTML = `
+      <button class="btn btn-secondary" onclick="UI.wzBack()">← Retour</button>
+      <button class="btn btn-primary" onclick="UI.saveEntry()">Ajouter ✨</button>`;
+  }
+
+  root.innerHTML = `
+    <div class="modal-overlay" id="modal-overlay" onclick="UI.closeModalOnBg(event)">
+      <div class="modal modal-wizard" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <h3>Ajouter à ma collection</h3>
+          <button class="btn-icon" onclick="UI.closeModal()">${iconX()}</button>
+        </div>
+        <div class="wz-progress">${progressHTML}</div>
+        <div class="modal-body wz-body">${bodyHTML}</div>
+        <div class="modal-footer">${footerHTML}</div>
+      </div>
+    </div>`;
+
+  if (s.step === 2) {
+    const hiddenType = document.createElement("input");
+    hiddenType.type = "hidden"; hiddenType.id = "f-type"; hiddenType.value = s.type;
+    const hiddenTitle = document.createElement("input");
+    hiddenTitle.type = "hidden"; hiddenTitle.id = "f-title"; hiddenTitle.value = s.apiSelected?.title || s.title;
+    document.querySelector(".modal-body").appendChild(hiddenType);
+    document.querySelector(".modal-body").appendChild(hiddenTitle);
+    setupApiSearch();
+    // Intercept fillFromApi to store in wizard state
+    const origFill = window._origFillFromApi || fillFromApi;
+    window._origFillFromApi = origFill;
+    setTimeout(() => document.getElementById("f-api-search")?.focus(), 100);
+  }
+
+  if (s.step === 3) {
+    // Hidden fields for saveEntry
+    const body = document.querySelector(".modal-body");
+    [
+      ["f-type",   s.type],
+      ["f-title",  s.apiSelected?.title || s.title],
+      ["f-genre",  s.apiSelected?.genre || ""],
+      ["f-author", s.apiSelected?.author || ""],
+      ["f-cover",  s.apiSelected?.cover_url || ""],
+      ["f-platform", ""],
+    ].forEach(([id, val]) => {
+      const el = document.createElement("input");
+      el.type = "hidden"; el.id = id; el.value = val || "";
+      body.appendChild(el);
+    });
+    // Status default
+    const statusDefault = document.createElement("input");
+    statusDefault.type = "hidden"; statusDefault.id = "f-status"; statusDefault.value = _wizardState._status || "finished";
+    body.appendChild(statusDefault);
+
+    buildRatingStars(0);
+  }
+}
+
+function _openModalClassic(entry) {
   const root = document.getElementById("modal-root");
   root.innerHTML = `
     <div class="modal-overlay" id="modal-overlay" onclick="UI.closeModalOnBg(event)">
       <div class="modal" role="dialog" aria-modal="true">
         <div class="modal-header">
-          <h3>${isEdit ? "Modifier" : "Ajouter un média"}</h3>
+          <h3>Modifier</h3>
           <button class="btn-icon" onclick="UI.closeModal()">${iconX()}</button>
         </div>
         <div class="modal-body">
-          <!-- Recherche unifiée -->
           <div class="form-group modal-search-unified">
             <div class="modal-type-tabs">
-              <button type="button" class="modal-type-tab ${!entry || entry?.media_type==="movie" ? "active" : ""}" data-type="movie" onclick="UI.setModalType('movie')">🎬 Film</button>
-              <button type="button" class="modal-type-tab ${entry?.media_type==="game" ? "active" : ""}" data-type="game" onclick="UI.setModalType('game')">🎮 Jeu</button>
-              <button type="button" class="modal-type-tab ${entry?.media_type==="book" ? "active" : ""}" data-type="book" onclick="UI.setModalType('book')">📚 Livre</button>
+              <button type="button" class="modal-type-tab ${entry.media_type==="movie" ? "active" : ""}" data-type="movie" onclick="UI.setModalType('movie')">🎬 Film</button>
+              <button type="button" class="modal-type-tab ${entry.media_type==="game" ? "active" : ""}" data-type="game" onclick="UI.setModalType('game')">🎮 Jeu</button>
+              <button type="button" class="modal-type-tab ${entry.media_type==="book" ? "active" : ""}" data-type="book" onclick="UI.setModalType('book')">📚 Livre</button>
             </div>
             <div class="api-search-wrap">
-              <input type="text" id="f-api-search" placeholder="Rechercher ou saisir un titre…" autocomplete="off" value="${esc(entry?.title||prefillTitle||"")}" />
+              <input type="text" id="f-api-search" placeholder="Rechercher ou saisir un titre…" autocomplete="off" value="${esc(entry.title||"")}" />
               <div class="api-results" id="api-results" style="display:none"></div>
             </div>
-            <input type="hidden" id="f-type" value="${entry?.media_type || 'movie'}" />
-            <input type="hidden" id="f-title" value="${esc(entry?.title||"")}" />
+            <input type="hidden" id="f-type" value="${entry.media_type || "movie"}" />
+            <input type="hidden" id="f-title" value="${esc(entry.title||"")}" />
           </div>
           <div class="form-row">
             <div class="form-group">
               <label>Statut</label>
               <select id="f-status">
                 ${["wishlist","playing","finished","paused","dropped"].map(s =>
-                  `<option value="${s}" ${(entry?.status===s||((!entry)&&s==="finished"))?"selected":""}>${STATUS_LABELS[s]}</option>`
+                  `<option value="${s}" ${entry.status===s?"selected":""}>${STATUS_LABELS[s]}</option>`
                 ).join("")}
               </select>
             </div>
             <div class="form-group">
-              <label>Note (1–10) <span id="rating-tooltip" class="rating-tooltip-label"></span></label>
+              <label>Note <span id="rating-tooltip" class="rating-tooltip-label"></span></label>
               <div class="rating-stars" id="rating-stars"></div>
             </div>
           </div>
-          <!-- Infos avancées (repliées) -->
-          <details class="advanced-details" ${entry?.genre||entry?.author||entry?.platform||entry?.cover_url ? "open" : ""}>
+          <details class="advanced-details" ${entry.genre||entry.author||entry.platform||entry.cover_url ? "open" : ""}>
             <summary class="advanced-summary">Infos supplémentaires <span class="advanced-hint">genre, auteur, image…</span></summary>
             <div class="advanced-body">
               <div class="form-row">
                 <div class="form-group">
                   <label>Genre</label>
-                  <input type="text" id="f-genre" value="${esc(entry?.genre||"")}" placeholder="Ex: RPG, Thriller…" />
+                  <input type="text" id="f-genre" value="${esc(entry.genre||"")}" placeholder="Ex: RPG, Thriller…" />
                 </div>
                 <div class="form-group">
                   <label>Auteur / Réalisateur</label>
-                  <input type="text" id="f-author" value="${esc(entry?.author||"")}" placeholder="Nom" />
+                  <input type="text" id="f-author" value="${esc(entry.author||"")}" placeholder="Nom" />
                 </div>
               </div>
               <div class="form-group">
                 <label>Plateforme</label>
-                <input type="text" id="f-platform" value="${esc(entry?.platform||"")}" placeholder="PS5, PC, Switch…" />
+                <input type="text" id="f-platform" value="${esc(entry.platform||"")}" placeholder="PS5, PC, Switch…" />
               </div>
               <div class="form-group">
                 <label>Image de couverture (URL)</label>
-                <input type="url" id="f-cover" value="${esc(entry?.cover_url||"")}" placeholder="https://…" />
+                <input type="url" id="f-cover" value="${esc(entry.cover_url||"")}" placeholder="https://…" />
               </div>
             </div>
           </details>
-
           <div class="form-group">
             <label>Notes personnelles</label>
-            <textarea id="f-notes" placeholder="Ton avis, tes impressions…">${esc(entry?.notes||"")}</textarea>
+            <textarea id="f-notes" placeholder="Ton avis, tes impressions…">${esc(entry.notes||"")}</textarea>
           </div>
-
-          <!-- Toggle coup de cœur -->
           <label class="toggle-row">
             <span class="toggle-label">♥ Coup de cœur</span>
             <span class="toggle-switch">
-              <input type="checkbox" id="f-favorite" ${entry?.is_favorite?"checked":""} />
+              <input type="checkbox" id="f-favorite" ${entry.is_favorite?"checked":""} />
               <span class="toggle-track"><span class="toggle-thumb"></span></span>
             </span>
           </label>
         </div>
         <div class="modal-footer">
-          ${isEdit ? `<button class="btn btn-danger btn-sm" onclick="UI.deleteEntry('${entry.id}')">Supprimer</button>` : ""}
+          <button class="btn btn-danger btn-sm" onclick="UI.deleteEntry('${entry.id}')">Supprimer</button>
           <button class="btn btn-secondary" onclick="UI.closeModal()">Annuler</button>
-          <button class="btn btn-primary" onclick="UI.saveEntry()">${isEdit ? "Enregistrer" : "Ajouter"}</button>
+          <button class="btn btn-primary" onclick="UI.saveEntry()">Enregistrer</button>
         </div>
       </div>
     </div>`;
-
-  // Rating stars
-  buildRatingStars(entry?.rating || 0);
-  // Hints API
-  updateApiAvailLabel(entry?.media_type || "game");
-  // API search listener
+  _currentRating = entry.rating || 0;
+  buildRatingStars(entry.rating || 0);
+  updateApiAvailLabel(entry.media_type || "movie");
   setupApiSearch();
-  // Auto-focus
   setTimeout(() => document.getElementById("f-api-search")?.focus(), 100);
 }
 
@@ -996,20 +1162,37 @@ function setupApiSearch() {
 function fillFromApi(idx) {
   const it = window._apiResults?.[idx];
   if (!it) return;
+
+  // Wizard actif étape 2 : stocker et afficher preview
+  if (_wizardState && _wizardState.step === 2) {
+    _wizardState.apiSelected = it;
+    window._apiSelected = it;
+    const input = document.getElementById("f-api-search");
+    if (input) input.value = it.title;
+    const results = document.getElementById("api-results");
+    if (results) results.style.display = "none";
+    const preview = document.getElementById("wz-selected-preview");
+    if (preview) {
+      preview.style.display = "flex";
+      preview.innerHTML =
+        (it.cover_url ? `<img src="${esc(it.cover_url)}" class="wz-preview-cover" alt="">` : "") +
+        `<div style="flex:1"><div class="wz-preview-title">${esc(it.title)}</div>` +
+        `<div class="wz-preview-sub">${it.release_year || ""}</div></div>` +
+        `<button type="button" class="wz-clear-btn" onclick="UI.wzClearSelected()">✕</button>`;
+    }
+    return;
+  }
+
   const set = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined && v !== null) el.value = v; };
-  // Champ unifié — affiche le titre sélectionné dans le search input
   const searchInput = document.getElementById("f-api-search");
   if (searchInput) searchInput.value = it.title;
-  // Stocke le titre dans le hidden
   set("f-title",  it.title);
   set("f-cover",  it.cover_url);
   set("f-genre",  it.genre);
   set("f-author", it.author);
   set("f-platform", it.platform);
-  // Stocke pour sauvegarde
   window._apiSelected = it;
   document.getElementById("api-results").style.display = "none";
-  // Ouvre les infos avancées si cover/genre remplis
   if (it.cover_url || it.genre) {
     const details = document.querySelector(".advanced-details");
     if (details) details.open = true;
@@ -2025,9 +2208,63 @@ window.UI = {
       btn.classList.toggle("active", btn.dataset.type === type);
     });
     updateApiAvailLabel(type);
-    // Relance la recherche avec le nouveau type
     const q = document.getElementById("f-api-search")?.value?.trim();
     if (q && q.length >= 2) setupApiSearch._trigger?.();
+  },
+
+  // ── Wizard ───────────────────────────────────────────────
+  wzSetType: (type) => {
+    if (!_wizardState) return;
+    _wizardState.type = type;
+    document.querySelectorAll(".wz-type-btn").forEach(b => {
+      b.classList.toggle("active", b.getAttribute("onclick").includes(type));
+    });
+  },
+
+  wzSetStatus: (status) => {
+    if (!_wizardState) return;
+    _wizardState._status = status;
+    document.querySelectorAll(".wz-status-btn").forEach(b => {
+      b.classList.toggle("active", b.dataset.status === status);
+    });
+    // Sync hidden field
+    const el = document.getElementById("f-status");
+    if (el) el.value = status;
+  },
+
+  wzClearSelected: () => {
+    if (!_wizardState) return;
+    _wizardState.apiSelected = null;
+    window._apiSelected = null;
+    const preview = document.getElementById("wz-selected-preview");
+    if (preview) { preview.style.display = "none"; preview.innerHTML = ""; }
+    const input = document.getElementById("f-api-search");
+    if (input) { input.value = ""; input.focus(); }
+  },
+
+  wzNext: () => {
+    if (!_wizardState) return;
+    if (_wizardState.step === 1) {
+      _wizardState.step = 2;
+      _renderWizard();
+    } else if (_wizardState.step === 2) {
+      // Récupère le titre tapé ou sélectionné
+      const typed = document.getElementById("f-api-search")?.value?.trim();
+      if (!typed && !_wizardState.apiSelected) {
+        toast("Tape au moins un titre 😊", "error"); return;
+      }
+      if (!_wizardState.apiSelected) _wizardState.title = typed;
+      _wizardState.step = 3;
+      _renderWizard();
+    }
+  },
+
+  wzBack: () => {
+    if (!_wizardState) return;
+    if (_wizardState.step > 1) {
+      _wizardState.step--;
+      _renderWizard();
+    }
   },
   switchAuthTab:   (tab) => {
     document.querySelectorAll(".auth-tab").forEach(b => b.classList.toggle("active", b.id === `tab-${tab}`));
