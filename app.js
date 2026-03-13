@@ -1783,8 +1783,8 @@ function renderDetailPanel(e, description, backdropUrl = null) {
   // Backdrop header
   const backdropStyle = backdropUrl
     ? `background-image: url('${backdropUrl}'); background-size: cover; background-position: center top;`
-    : "";
-  const backdropClass = backdropUrl ? "detail-backdrop has-backdrop" : "detail-backdrop";
+    : (e.cover_url ? `--fallback-img: url('${e.cover_url}');` : "");
+  const backdropClass = backdropUrl ? "detail-backdrop has-backdrop" : (e.cover_url ? "detail-backdrop has-backdrop has-fallback" : "detail-backdrop");
 
   const posterHTML = e.cover_url
     ? `<img src="${esc(e.cover_url)}" alt="${esc(e.title)}" class="detail-poster" onerror="this.style.display='none'">`
