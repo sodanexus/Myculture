@@ -25,9 +25,20 @@ async function translateWithGroq(text: string, groqKey: string): Promise<string>
     const data = await res.json();
     return data.choices?.[0]?.message?.content?.trim() || text;
   } catch {
-    return text; // fallback anglais si Groq échoue
+    return text;
   }
 }
+
+async function getIGDBToken(clientId: string, clientSecret: string): Promise<string> {
+  const tokenRes = await fetch(
+    `https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`,
+    { method: "POST" }
+  );
+  const { access_token } = await tokenRes.json();
+  return access_token;
+}
+
+const IGDB_FIELDS = "name,cover.image_id,summary,first_release_date,genres.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher,platforms.name";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -38,36 +49,48 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { query } = await req.json();
-    if (!query) return new Response(JSON.stringify({ error: "query requis" }), {
-      status: 400, headers: { ...CORS, "Content-Type": "application/json" }
-    });
+    const body = await req.json();
+    const { query, id } = body;
+
+    if (!query && !id) {
+      return new Response(JSON.stringify({ error: "query ou id requis" }), {
+        status: 400, headers: { ...CORS, "Content-Type": "application/json" }
+      });
+    }
 
     const clientId     = Deno.env.get("IGDB_CLIENT_ID")!;
     const clientSecret = Deno.env.get("IGDB_CLIENT_SECRET")!;
     const groqKey      = Deno.env.get("GROQ_API_KEY") || "";
 
-    // Token Twitch
-    const tokenRes = await fetch(
-      `https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`,
-      { method: "POST" }
-    );
-    const { access_token } = await tokenRes.json();
+    const access_token = await getIGDBToken(clientId, clientSecret);
 
-    // Appel IGDB
-    const igdbRes = await fetch("https://api.igdb.com/v4/games", {
-      method: "POST",
-      headers: {
-        "Client-ID":     clientId,
-        "Authorization": `Bearer ${access_token}`,
-        "Content-Type":  "text/plain",
-      },
-      body: `search "${query}"; fields name,cover.image_id,summary,first_release_date,genres.name,involved_companies.company.name,involved_companies.developer,platforms.name; limit 6;`,
-    });
+    const headers = {
+      "Client-ID":     clientId,
+      "Authorization": `Bearer ${access_token}`,
+      "Content-Type":  "text/plain",
+    };
 
-    const games = await igdbRes.json();
+    let games: any[] = [];
 
-    // Traduction des descriptions en parallèle via Groq
+    if (id) {
+      // ── Détail par ID ──────────────────────────────────────
+      const igdbRes = await fetch("https://api.igdb.com/v4/games", {
+        method: "POST",
+        headers,
+        body: `fields ${IGDB_FIELDS}; where id = ${id}; limit 1;`,
+      });
+      games = await igdbRes.json();
+    } else {
+      // ── Recherche par texte ────────────────────────────────
+      const igdbRes = await fetch("https://api.igdb.com/v4/games", {
+        method: "POST",
+        headers,
+        body: `search "${query}"; fields ${IGDB_FIELDS}; limit 6;`,
+      });
+      games = await igdbRes.json();
+    }
+
+    // Traduction des descriptions via Groq
     const translated = await Promise.all(
       (games || []).map(async (g: any) => {
         const summary = g.summary
