@@ -2570,3 +2570,27 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ── Wizard mobile fixes ────────────────────────────────────── */
+@media (max-width: 600px) {
+  .modal-wizard {
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-wizard .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .modal-wizard .api-results {
+    max-height: 45vh;
+    overflow-y: auto;
+  }
+  .wz-type-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: .5rem;
+  }
+  .wz-type-btn { padding: 1rem .25rem; }
+  .wz-type-icon { font-size: 1.75rem; }
+}
