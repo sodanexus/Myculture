@@ -1747,36 +1747,23 @@ async function updateQuickAdd(query) {
 
   // Debounce API calls
   clearTimeout(_quickAddTimer);
-  _quickAddTimer = setTimeout(async () => {
+  _quickAddTimer = setTimeout(() => {
     const existingTitles = new Set(State.entries.map(e => e.title.toLowerCase()));
-    try {
-      const [games, movies, books] = await Promise.allSettled([
-        searchMedia(query, "game"),
-        searchMedia(query, "movie"),
-        searchMedia(query, "book"),
-      ]);
+    const currentQuery = query;
+    let accumulated = [];
 
-      const allResults = [
-        ...(games.value || []).slice(0, 4).map(r => ({ ...r, media_type: "game" })),
-        ...(movies.value || []).slice(0, 4).map(r => ({ ...r, media_type: "movie" })),
-        ...(books.value || []).slice(0, 4).map(r => ({ ...r, media_type: "book" })),
-      ].filter(r => !existingTitles.has(r.title.toLowerCase()));
-
+    function renderApiResults() {
       const apiResultsEl = document.getElementById("quick-api-results");
-      const spinnerEl = document.getElementById("quick-api-spinner");
-      if (spinnerEl) spinnerEl.remove();
       if (!apiResultsEl) return;
+      // Vérifie que la query est toujours la même
+      const liveQuery = document.getElementById("global-search")?.value?.trim() || "";
+      if (liveQuery !== currentQuery) return;
 
-      const currentQuery = document.getElementById("global-search")?.value?.trim() || "";
-      if (!allResults.length) {
-        apiResultsEl.innerHTML = `<div class="quick-add-fallback" onclick="UI.quickAdd('${currentQuery.replace(/'/g,"\\'")}')">
-          ${iconPlus()} Ajouter "<strong>${esc(currentQuery)}</strong>" manuellement
-        </div>`;
-        return;
-      }
+      window._quickApiResults = accumulated;
 
-      const q2 = document.getElementById("global-search")?.value?.trim() || "";
-      apiResultsEl.innerHTML = allResults.map((r, i) => `
+      if (!accumulated.length) return; // Spinner encore visible, on attend
+
+      apiResultsEl.innerHTML = accumulated.map((r, i) => `
         <div class="quick-result quick-result-api" onclick="UI.quickAddFromResult(${i})">
           ${r.cover_url ? `<img src="${esc(r.cover_url)}" class="quick-thumb" alt="">` : `<div class="quick-thumb quick-thumb-ph">${TYPE_ICONS[r.media_type]||"🎭"}</div>`}
           <div class="quick-info">
@@ -1785,16 +1772,59 @@ async function updateQuickAdd(query) {
           </div>
           <div class="quick-add-icon">${iconPlus()}</div>
         </div>`).join("") +
-        `<div class="quick-add-fallback" onclick="UI.quickAdd('${q2.replace(/'/g,"\\'")}')">
-          ${iconPlus()} Ajouter "<strong>${esc(q2)}</strong>" manuellement
+        `<div class="quick-add-fallback" onclick="UI.quickAdd('${liveQuery.replace(/'/g,"\\'")}')">
+          ${iconPlus()} Ajouter "<strong>${esc(liveQuery)}</strong>" manuellement
         </div>`;
-
-      // Store results for onclick access
-      window._quickApiResults = allResults;
-    } catch {
-      const spinnerEl = document.getElementById("quick-api-spinner");
-      if (spinnerEl) spinnerEl.remove();
     }
+
+    let pendingCount = 3;
+    function onApiDone() {
+      pendingCount--;
+      if (pendingCount === 0) {
+        const spinnerEl = document.getElementById("quick-api-spinner");
+        if (spinnerEl) spinnerEl.remove();
+        // Si aucun résultat du tout après les 3 APIs
+        const apiResultsEl = document.getElementById("quick-api-results");
+        const liveQuery = document.getElementById("global-search")?.value?.trim() || "";
+        if (apiResultsEl && !accumulated.length) {
+          apiResultsEl.innerHTML = `<div class="quick-add-fallback" onclick="UI.quickAdd('${liveQuery.replace(/'/g,"\\'")}')">
+            ${iconPlus()} Ajouter "<strong>${esc(liveQuery)}</strong>" manuellement
+          </div>`;
+        }
+      }
+    }
+
+    // Lance les 3 APIs indépendamment — chacune affiche dès qu'elle répond
+    searchMedia(currentQuery, "game").then(results => {
+      const liveQuery = document.getElementById("global-search")?.value?.trim() || "";
+      if (liveQuery !== currentQuery) return;
+      const newItems = (results || []).slice(0, 4)
+        .map(r => ({ ...r, media_type: "game" }))
+        .filter(r => !existingTitles.has(r.title.toLowerCase()));
+      accumulated = [...accumulated, ...newItems];
+      renderApiResults();
+    }).catch(() => {}).finally(onApiDone);
+
+    searchMedia(currentQuery, "movie").then(results => {
+      const liveQuery = document.getElementById("global-search")?.value?.trim() || "";
+      if (liveQuery !== currentQuery) return;
+      const newItems = (results || []).slice(0, 4)
+        .map(r => ({ ...r, media_type: "movie" }))
+        .filter(r => !existingTitles.has(r.title.toLowerCase()));
+      accumulated = [...accumulated, ...newItems];
+      renderApiResults();
+    }).catch(() => {}).finally(onApiDone);
+
+    searchMedia(currentQuery, "book").then(results => {
+      const liveQuery = document.getElementById("global-search")?.value?.trim() || "";
+      if (liveQuery !== currentQuery) return;
+      const newItems = (results || []).slice(0, 4)
+        .map(r => ({ ...r, media_type: "book" }))
+        .filter(r => !existingTitles.has(r.title.toLowerCase()));
+      accumulated = [...accumulated, ...newItems];
+      renderApiResults();
+    }).catch(() => {}).finally(onApiDone);
+
   }, 400);
 }
 
