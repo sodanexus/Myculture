@@ -1752,17 +1752,11 @@ function setDiscoverType(type) {
 
 
 // ── Fiche détaillée ───────────────────────────────────────────
-function renderDetailPanel(e, description) {
-  // Utilise les constantes globales TYPE_ICONS, TYPE_LABELS, STATUS_LABELS
-
+function renderDetailPanel(e, description, backdropUrl = null) {
   const stars = ratingStars(e.rating);
 
-  const cover = e.cover_url
-    ? `<img src="${esc(e.cover_url)}" alt="${esc(e.title)}" style="width:100%;border-radius:var(--radius);object-fit:cover;max-height:320px" onerror="this.style.display='none'">`
-    : `<div style="width:100%;height:180px;background:var(--bg-3);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:4rem">${TYPE_ICONS[e.media_type]||"🎭"}</div>`;
-
   const metaRow = (label, value) => value
-    ? `<div class="detail-meta-row"><span class="detail-meta-label">${label}</span><span class="detail-meta-value">${esc(value)}</span></div>`
+    ? `<div class="detail-meta-row"><span class="detail-meta-label">${label}</span><span class="detail-meta-value">${esc(String(value))}</span></div>`
     : "";
 
   const synopsisHTML = description
@@ -1782,45 +1776,60 @@ function renderDetailPanel(e, description) {
     ? `<a href="${externalUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm detail-ext-link">${externalIcon} Voir sur ${externalLabel}</a>`
     : "";
 
-  const youtubeQuery  = encodeURIComponent(`${e.title} ${e.media_type === "game" ? "trailer" : e.media_type === "movie" ? "bande annonce" : "book trailer"}`);
+  const youtubeQuery     = encodeURIComponent(`${e.title} ${e.media_type === "game" ? "trailer" : e.media_type === "movie" ? "bande annonce" : "book trailer"}`);
   const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${youtubeQuery}`;
-  const youtubeHTML   = `<a href="${youtubeSearchUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm detail-ext-link">▶ Bande-annonce</a>`;
+  const youtubeHTML      = `<a href="${youtubeSearchUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm detail-ext-link">▶ Bande-annonce</a>`;
+
+  // Backdrop header
+  const backdropStyle = backdropUrl
+    ? `background-image: url('${backdropUrl}'); background-size: cover; background-position: center top;`
+    : "";
+  const backdropClass = backdropUrl ? "detail-backdrop has-backdrop" : "detail-backdrop";
+
+  const posterHTML = e.cover_url
+    ? `<img src="${esc(e.cover_url)}" alt="${esc(e.title)}" class="detail-poster" onerror="this.style.display='none'">`
+    : `<div class="detail-poster detail-poster-placeholder">${TYPE_ICONS[e.media_type]||"🎭"}</div>`;
 
   const root = document.getElementById("modal-root");
   root.innerHTML = `
     <div class="modal-overlay" id="modal-overlay" onclick="UI.closeModalOnBg(event)">
       <div class="modal detail-modal" role="dialog" aria-modal="true">
-        <div class="modal-header">
-          <div style="display:flex;align-items:center;gap:.5rem">
-            <span class="badge badge-${e.media_type}">${TYPE_ICONS[e.media_type]} ${getTypeLabel(e)}</span>
-            <span class="badge badge-${e.status}">${STATUS_LABELS[e.status]}</span>
-            ${e.is_favorite ? `<span style="color:var(--accent);font-size:1rem">♥</span>` : ""}
-          </div>
-          <div style="display:flex;align-items:center;gap:.4rem;margin-left:auto">
-            ${externalHTML}${youtubeHTML}
-            <button class="btn-icon" onclick="UI.closeModal()">${iconX()}</button>
-          </div>
-        </div>
-        <div class="detail-body">
-          <div class="detail-cover">${cover}</div>
-          <div class="detail-info">
-            <h2 class="detail-title">${esc(e.title)}</h2>
-            <div class="detail-stars">${stars}</div>
-            <div class="detail-meta">
-              ${metaRow("Genre", e.genre)}
-              ${metaRow("Auteur", e.author)}
-              ${metaRow("Plateforme", e.platform)}
-              ${metaRow("Année", e.release_year)}
-              ${metaRow("Ajouté le", e.created_at ? new Date(e.created_at).toLocaleDateString("fr-FR") : null)}
+
+        <div class="${backdropClass}" style="${backdropStyle}">
+          <div class="detail-backdrop-gradient"></div>
+          <button class="detail-close-btn btn-icon" onclick="UI.closeModal()">${iconX()}</button>
+          <div class="detail-backdrop-content">
+            ${posterHTML}
+            <div class="detail-backdrop-info">
+              <h2 class="detail-title">${esc(e.title)}</h2>
+              <div class="detail-stars">${stars}</div>
+              <div class="detail-badges">
+                <span class="badge badge-${e.media_type}">${TYPE_ICONS[e.media_type]} ${getTypeLabel(e)}</span>
+                <span class="badge badge-${e.status}">${STATUS_LABELS[e.status]}</span>
+                ${e.is_favorite ? `<span class="detail-fav">♥</span>` : ""}
+              </div>
             </div>
-            ${synopsisHTML}
-            ${e.notes ? `<div class="detail-notes"><div class="detail-notes-label">Notes personnelles</div><p>${esc(e.notes)}</p></div>` : ""}
           </div>
         </div>
+
+        <div class="detail-body">
+          <div class="detail-meta">
+            ${metaRow("Genre", e.genre)}
+            ${metaRow("Auteur", e.author)}
+            ${metaRow("Plateforme", e.platform)}
+            ${metaRow("Année", e.release_year)}
+            ${metaRow("Ajouté le", e.created_at ? new Date(e.created_at).toLocaleDateString("fr-FR") : null)}
+          </div>
+          ${synopsisHTML}
+          ${e.notes ? `<div class="detail-notes"><div class="detail-notes-label">Notes personnelles</div><p>${esc(e.notes)}</p></div>` : ""}
+        </div>
+
         <div class="modal-footer">
           <button class="btn btn-danger btn-sm" onclick="UI.deleteEntry('${e.id}')">Supprimer</button>
-          <button class="btn btn-secondary" onclick="UI.closeModal()">Fermer</button>
-          <button class="btn btn-primary" onclick="UI.openEditFromDetail('${e.id}')">✏ Modifier</button>
+          <div style="display:flex;gap:.5rem;margin-left:auto">
+            ${externalHTML}${youtubeHTML}
+            <button class="btn btn-primary" onclick="UI.openEditFromDetail('${e.id}')">✏ Modifier</button>
+          </div>
         </div>
       </div>
     </div>`;
@@ -1830,35 +1839,42 @@ async function openDetailPanel(id) {
   const e = State.entries.find(x => x.id === id);
   if (!e) return;
 
-  // Affiche la fiche immédiatement avec ce qu'on a déjà
-  renderDetailPanel(e, e.description || null);
+  // Affichage immédiat sans backdrop
+  renderDetailPanel(e, e.description || null, e.backdrop_url || null);
 
-  // Si pas de description stockée, on va la chercher via l'API
-  if (!e.description && e.title) {
+  // Récupération backdrop + synopsis si film/série TMDb
+  if (e.media_type === "movie" && e.external_id) {
+    try {
+      const key  = CONFIG?.tmdb?.apiKey;
+      const base = CONFIG?.tmdb?.baseUrl;
+      if (key && base) {
+        const data = await apiFetch(`${base}/movie/${e.external_id}?api_key=${key}&language=fr-FR`);
+        const backdrop = data.backdrop_path
+          ? `https://image.tmdb.org/t/p/w1280${data.backdrop_path}`
+          : null;
+        const description = data.overview || e.description || null;
+
+        // Met à jour backdrop en base si nouveau
+        if (backdrop && backdrop !== e.backdrop_url) {
+          e.backdrop_url = backdrop;
+          Media.update(e.id, { backdrop_url: backdrop }).catch(() => {});
+        }
+        if (description && !e.description) {
+          e.description = description;
+          Media.update(e.id, { description }).catch(() => {});
+        }
+        renderDetailPanel(e, description, backdrop);
+      }
+    } catch(err) {}
+  } else if (!e.description && e.title) {
+    // Fallback recherche pour description (jeux, livres, séries sans external_id)
     try {
       const items = await searchMedia(e.title, e.media_type);
       const match = items.find(it => it.title.toLowerCase() === e.title.toLowerCase()) || items[0];
       if (match?.description) {
-        // Met à jour l'affichage avec le synopsis récupéré
-        const synopsisEl = document.querySelector(".detail-synopsis p");
-        if (synopsisEl) {
-          synopsisEl.textContent = match.description;
-        } else {
-          // Injecte le bloc synopsis s'il n'existait pas encore
-          const notesEl = document.querySelector(".detail-notes");
-          const infoEl  = document.querySelector(".detail-info");
-          if (infoEl) {
-            const div = document.createElement("div");
-            div.className = "detail-synopsis";
-            div.innerHTML = `<div class="detail-notes-label">Synopsis</div><p>${esc(match.description)}</p>`;
-            infoEl.insertBefore(div, notesEl || null);
-          }
-        }
-        // Sauvegarde en base et en local
         e.description = match.description;
-        if (!false) {
-          Media.update(e.id, { description: match.description }).catch(() => {});
-        }
+        Media.update(e.id, { description: match.description }).catch(() => {});
+        renderDetailPanel(e, match.description, e.backdrop_url || null);
       }
     } catch {}
   }
