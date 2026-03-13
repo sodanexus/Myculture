@@ -1757,9 +1757,9 @@ async function updateQuickAdd(query) {
       ]);
 
       const allResults = [
-        ...(games.value || []).slice(0, 2).map(r => ({ ...r, media_type: "game" })),
-        ...(movies.value || []).slice(0, 2).map(r => ({ ...r, media_type: "movie" })),
-        ...(books.value || []).slice(0, 2).map(r => ({ ...r, media_type: "book" })),
+        ...(games.value || []).slice(0, 4).map(r => ({ ...r, media_type: "game" })),
+        ...(movies.value || []).slice(0, 4).map(r => ({ ...r, media_type: "movie" })),
+        ...(books.value || []).slice(0, 4).map(r => ({ ...r, media_type: "book" })),
       ].filter(r => !existingTitles.has(r.title.toLowerCase()));
 
       const apiResultsEl = document.getElementById("quick-api-results");
