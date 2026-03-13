@@ -444,7 +444,6 @@ function _countActiveFilters() {
   let n = 0;
   if (State.filters.favorite) n++;
   if (State.filters.status !== "all") n++;
-  if ((State.filters.minRating||0) > 0) n++;
   if (State.filters.sort !== "created_at") n++;
   return n;
 }
@@ -512,13 +511,13 @@ function filterEntries(entries) {
   if (f.type    !== "all") res = res.filter(e => e.media_type === f.type);
   if (f.status  !== "all") res = res.filter(e => e.status    === f.status);
   if (f.favorite)          res = res.filter(e => e.is_favorite);
-  if ((f.minRating||0) > 0) res = res.filter(e => e.rating != null && e.rating >= f.minRating);
   if (f.search)  res = res.filter(e => e.title.toLowerCase().includes(f.search.toLowerCase()));
   // Tri local
   res.sort((a, b) => {
     switch (f.sort) {
       case "title":         return a.title.localeCompare(b.title);
-      case "rating":        return (b.rating||0) - (a.rating||0);
+      case "rating_desc":   return (b.rating||0) - (a.rating||0);
+      case "rating_asc":    return (a.rating||0) - (b.rating||0);
       case "date_finished": return new Date(b.date_finished||0) - new Date(a.date_finished||0);
       default:              return new Date(b.created_at||0)    - new Date(a.created_at||0);
     }
@@ -2238,7 +2237,7 @@ window.UI = {
 
     const _buildModal = () => {
       const statuses = ["all","wishlist","playing","finished","paused","dropped"];
-      const sorts = [["created_at","Date d'ajout"],["date_finished","Date de fin"],["rating","Note"],["title","Titre"]];
+      const sorts = [["created_at","Date d'ajout"],["date_finished","Date de fin"],["rating_desc","Note ↓"],["rating_asc","Note ↑"],["title","Titre"]];
       const ratingOpts = [0,3,3.5,4,4.5,5];
 
       const activeCount = _countActiveFilters();
@@ -2276,10 +2275,7 @@ window.UI = {
                 <div class="filter-modal-label">Statut</div>
                 <div class="filter-modal-chips" id="fm-status-chips">${statusChips}</div>
               </div>
-              <div class="filter-modal-section">
-                <div class="filter-modal-label">Note minimale <span id="fm-rating-label" class="filter-rating-label">${(State.filters.minRating||0) > 0 ? `≥ ${RATING_LABELS[State.filters.minRating]}` : ""}</span></div>
-                <div class="filter-rating-stars" id="fm-rating-stars"></div>
-              </div>
+
               <div class="filter-modal-section">
                 <div class="filter-modal-label">Trier par</div>
                 <div class="filter-modal-chips" id="fm-sort-chips">${sortChips}</div>
@@ -2391,7 +2387,6 @@ window.UI = {
     State.filters.status = "all";
     State.filters.sort = "created_at";
     State.filters.favorite = false;
-    State.filters.minRating = 0;
     renderCards(); buildFilterBar(); _updateFilterToggleLabel();
     UI.closeFilterModal();
   },
