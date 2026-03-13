@@ -2684,44 +2684,23 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
 }
 .btn-filter-toggle.open { border-color: var(--accent); color: var(--accent); }
 
-/* Drawer filtres */
-.filter-drawer {
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-2);
-  animation: fadeSlideIn .2s ease both;
-  overflow-x: auto;
-  scrollbar-width: none;
+/* Modal filtres */
+.filter-modal {
+  max-width: 420px;
 }
-.filter-drawer::-webkit-scrollbar { display: none; }
-.filter-drawer-inner {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  padding: .5rem var(--content-px);
-  min-width: max-content;
+.filter-modal-section {
+  margin-bottom: 1.5rem;
 }
-.filter-drawer-section {
-  display: flex;
-  align-items: center;
-  gap: .4rem;
-  padding-right: 1rem;
-  border-right: 1px solid var(--border);
-  margin-right: 1rem;
-}
-.filter-drawer-section:last-child {
-  border-right: none;
-  margin-right: 0;
-  padding-right: 0;
-}
-.filter-drawer-label {
-  font-size: .68rem;
+.filter-modal-label {
+  font-size: .72rem;
   font-weight: 700;
   color: var(--text-3);
   text-transform: uppercase;
   letter-spacing: .06em;
-  white-space: nowrap;
+  margin-bottom: .6rem;
 }
-.filter-drawer-chips {
+.filter-modal-chips {
   display: flex;
-  gap: .3rem;
+  flex-wrap: wrap;
+  gap: .4rem;
 }
