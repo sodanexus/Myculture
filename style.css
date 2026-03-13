@@ -2836,3 +2836,35 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   color: var(--text-2);
   font-weight: 500;
 }
+
+/* ── Synopsis tronqué avec voir plus ───────────────────────── */
+.detail-synopsis-wrap {
+  position: relative;
+}
+.detail-synopsis-wrap:not(.expanded) .detail-synopsis-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.detail-synopsis-wrap:not(.expanded)::after {
+  content: '';
+  position: absolute;
+  bottom: 22px;
+  left: 0; right: 0;
+  height: 2rem;
+  background: linear-gradient(to bottom, transparent, var(--bg-1));
+  pointer-events: none;
+}
+.detail-synopsis-toggle {
+  display: block;
+  margin-top: .35rem;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: .8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+.detail-synopsis-toggle:hover { text-decoration: underline; }
