@@ -5,14 +5,6 @@
 import { initSupabase, isConfigured, Auth, Media, computeStats, Profiles, Activity } from "./supabase.js";
 import { searchMedia, apiAvailability }                            from "./api.js";
 
-// Debug visible — à retirer après diagnostic
-document.addEventListener("DOMContentLoaded", () => {
-  const el = document.getElementById("app");
-  if (el && el.querySelector(".spinner")) {
-    el.insertAdjacentHTML("beforeend", "<div style='position:fixed;bottom:20px;left:0;right:0;text-align:center;font-size:12px;color:#c9a84c'>app.js chargé ✓</div>");
-  }
-});
-
 // ── État global ──────────────────────────────────────────────
 const State = {
   user:       null,
@@ -48,27 +40,11 @@ async function init() {
     document.getElementById("app").innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#e05b5b;font-family:sans-serif;flex-direction:column;gap:1rem"><b>Erreur : config.js introuvable</b><p style="font-size:.85rem;color:#a0a0b0">Vérifiez que config.js est présent dans votre dépôt GitHub.</p></div>';
     return;
   }
-
-  // Timeout de secours — si l'init prend plus de 8s, affiche la page de connexion
-  const safetyTimeout = setTimeout(() => {
-    const app = document.getElementById("app");
-    if (app && app.querySelector(".spinner")) {
-      console.warn("[Init] Timeout — fallback vers la page de connexion");
-      renderAuthPage();
-    }
-  }, 8000);
-
   try {
     initSupabase();
     applyTheme(localStorage.getItem("kulturo-theme") || CONFIG.app.defaultTheme);
 
-    const existingUser = await Promise.race([
-      Auth.getUser().catch(() => null),
-      new Promise(resolve => setTimeout(() => resolve(null), 5000))
-    ]);
-
-    clearTimeout(safetyTimeout);
-
+    const existingUser = await Auth.getUser().catch(() => null);
     if (existingUser) {
       State.user = existingUser;
       renderApp();
@@ -89,14 +65,7 @@ async function init() {
     });
     bindGlobalEvents();
   } catch(err) {
-    clearTimeout(safetyTimeout);
     console.error("Erreur init:", err);
-    document.getElementById("app").innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:1rem;padding:2rem;font-family:sans-serif;color:#e05b5b;text-align:center">
-        <b>Erreur de démarrage</b>
-        <p style="font-size:.85rem;color:#a0a0b0;word-break:break-all">\${err?.message || err}</p>
-        <button onclick="location.reload()" style="padding:.5rem 1.5rem;background:#c9a84c;border:none;border-radius:8px;color:#000;cursor:pointer;font-size:.9rem">Réessayer</button>
-      </div>`;
   }
 }
 
@@ -610,7 +579,7 @@ async function renderDashboard() {
     try {
       const p = await Profiles.get(State.user.id);
       cachedUsername = p?.username || "";
-    } catch(e) {}
+    } catch {}
   }
 
   // Section identité (username) en haut
@@ -1068,7 +1037,8 @@ async function saveEntry() {
   window._apiSelected = null;
   _currentRating = 0;
 
-  if (DiscoverState.loading) return;
+  try {
+    if (DiscoverState.loading) return;
   DiscoverState.loading = true;
 
   grid.innerHTML = `<div class="discover-loading"><div class="spinner"></div><span>Analyse de vos goûts avec l'IA…</span></div>`;
@@ -1108,7 +1078,7 @@ async function saveEntry() {
             description: s.reason, source_api: "manual", groq_reason: s.reason,
           });
         }
-      } catch(e) {}
+      } catch {}
     }));
   } else {
     // Fallback : recherche par genres/auteurs si Groq indisponible
@@ -1130,7 +1100,7 @@ async function saveEntry() {
             if (!existingTitles.has(it.title.toLowerCase()))
               allResults.push({ ...it, media_type: type });
           });
-        } catch(e) {}
+        } catch {}
       })
     ));
   }
@@ -1201,7 +1171,8 @@ async function addToWishlist(idx) {
     notes:       null,
     platform:    it.platform  || null,
   };
-
+  try {
+  
   // Retire la carte par son index data-attribute
   const card = grid.querySelector(`[data-discover-idx="${idx}"]`);
   if (card) {
@@ -1348,7 +1319,7 @@ async function openDetailPanel(id) {
           Media.update(e.id, { description: match.description }).catch(() => {});
         }
       }
-    } catch(e) {}
+    } catch {}
   }
 }
 
