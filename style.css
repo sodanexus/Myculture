@@ -2641,17 +2641,18 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   display: flex;
   align-items: center;
   gap: .5rem;
-  padding: .5rem var(--content-px);
+  padding: .4rem var(--content-px);
   border-bottom: 1px solid var(--border);
-  overflow: visible;
+  overflow: hidden;
 }
 .filter-bar .category-tabs {
   flex: 1;
   overflow-x: auto;
   scrollbar-width: none;
   display: flex;
-  gap: .4rem;
-  padding: .15rem 0;
+  gap: .35rem;
+  padding: .1rem 0;
+  -webkit-overflow-scrolling: touch;
 }
 .filter-bar .category-tabs::-webkit-scrollbar { display: none; }
 .filter-actions { flex-shrink: 0; }
@@ -2659,50 +2660,68 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
 .btn-filter-toggle {
   display: flex;
   align-items: center;
-  gap: .25rem;
-  padding: .4rem .7rem;
+  justify-content: center;
+  width: 34px; height: 34px;
   background: var(--bg-3);
   border: 1.5px solid var(--border);
-  border-radius: 999px;
+  border-radius: 50%;
   color: var(--text-2);
-  font-size: .75rem;
-  font-weight: 600;
   cursor: pointer;
   transition: all .15s ease;
-  white-space: nowrap;
+  flex-shrink: 0;
+  position: relative;
 }
 .btn-filter-toggle:hover { border-color: var(--accent); color: var(--accent); }
-.btn-filter-toggle.has-filter { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.btn-filter-toggle.has-filter { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.btn-filter-toggle.has-filter::after {
+  content: '';
+  position: absolute;
+  top: -2px; right: -2px;
+  width: 8px; height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  border: 2px solid var(--bg-1);
+}
 .btn-filter-toggle.open { border-color: var(--accent); color: var(--accent); }
 
 /* Drawer filtres */
 .filter-drawer {
-  padding: .75rem var(--content-px) .5rem;
   border-bottom: 1px solid var(--border);
   background: var(--bg-2);
   animation: fadeSlideIn .2s ease both;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.filter-drawer::-webkit-scrollbar { display: none; }
 .filter-drawer-inner {
   display: flex;
-  flex-direction: column;
-  gap: .75rem;
+  align-items: center;
+  gap: 0;
+  padding: .5rem var(--content-px);
+  min-width: max-content;
 }
 .filter-drawer-section {
   display: flex;
   align-items: center;
-  gap: .5rem;
-  flex-wrap: wrap;
+  gap: .4rem;
+  padding-right: 1rem;
+  border-right: 1px solid var(--border);
+  margin-right: 1rem;
+}
+.filter-drawer-section:last-child {
+  border-right: none;
+  margin-right: 0;
+  padding-right: 0;
 }
 .filter-drawer-label {
-  font-size: .72rem;
+  font-size: .68rem;
   font-weight: 700;
   color: var(--text-3);
   text-transform: uppercase;
-  letter-spacing: .05em;
-  min-width: 56px;
+  letter-spacing: .06em;
+  white-space: nowrap;
 }
 .filter-drawer-chips {
   display: flex;
-  gap: .35rem;
-  flex-wrap: wrap;
+  gap: .3rem;
 }
