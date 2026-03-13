@@ -185,19 +185,35 @@ function renderApp() {
         <div class="page-header">
         </div>
         <div class="filter-bar" id="filter-bar">
-          <select class="filter-select" id="sort-select" onchange="UI.setSort(this.value)">
-            <option value="created_at">Date d'ajout</option>
-            <option value="date_finished">Date de fin</option>
-            <option value="rating">Note</option>
-            <option value="title">Titre</option>
-          </select>
+          <div class="category-tabs" id="category-tabs">
+            <button class="category-tab active" onclick="UI.setTypeFilter('all')">Tous</button>
+            <button class="category-tab" onclick="UI.setTypeFilter('game')">🎮 Jeux</button>
+            <button class="category-tab" onclick="UI.setTypeFilter('movie')">🎬 Films</button>
+            <button class="category-tab" onclick="UI.setTypeFilter('book')">📚 Livres</button>
+            <button class="category-tab" onclick="UI.navTo('fav')">♥ Favoris</button>
+          </div>
+          <div class="filter-actions">
+            <button class="btn-filter-toggle" id="btn-filter-toggle" onclick="UI.toggleFilterDrawer()" title="Filtrer">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+              <span id="filter-active-label"></span>
+            </button>
+          </div>
         </div>
-        <div class="category-tabs" id="category-tabs">
-          <button class="category-tab active" onclick="UI.setTypeFilter('all')">Tous</button>
-          <button class="category-tab" onclick="UI.setTypeFilter('game')">🎮 Jeux</button>
-          <button class="category-tab" onclick="UI.setTypeFilter('movie')">🎬 Films</button>
-          <button class="category-tab" onclick="UI.setTypeFilter('book')">📚 Livres</button>
-          <button class="category-tab" onclick="UI.navTo('fav')">♥ Favoris</button>
+        <div class="filter-drawer" id="filter-drawer" style="display:none">
+          <div class="filter-drawer-inner">
+            <div class="filter-drawer-section">
+              <span class="filter-drawer-label">Statut</span>
+              <div class="filter-drawer-chips" id="filter-status-chips"></div>
+            </div>
+            <div class="filter-drawer-section">
+              <span class="filter-drawer-label">Trier par</span>
+              <div class="filter-drawer-chips">
+                ${[["created_at","Date d'ajout"],["date_finished","Date de fin"],["rating","Note"],["title","Titre"]].map(([v,l]) =>
+                  `<button class="filter-chip ${State.filters.sort===v?"active":""}" onclick="UI.setSort('${v}')">${l}</button>`
+                ).join("")}
+              </div>
+            </div>
+          </div>
         </div>
         <div id="cards-grid"></div>
       </section>
@@ -427,17 +443,29 @@ function showPage(name) {
 
 // ── Filter bar ────────────────────────────────────────────────
 function buildFilterBar() {
-  const bar = document.getElementById("filter-bar");
-  if (!bar) return;
-  const statuses = ["all","wishlist","playing","finished","paused","dropped"];
-  const chips = statuses.map(s => {
-    const label = s === "all" ? "Tous" : STATUS_LABELS[s];
-    return `<button class="filter-chip ${State.filters.status === s ? "active" : ""}"
-                    onclick="UI.setStatusChip('${s}')">${label}</button>`;
-  }).join("");
-  // Réinjecte les chips avant le select
-  const select = bar.querySelector("select");
-  bar.insertAdjacentHTML("afterbegin", chips);
+  // Chips statut dans le drawer
+  const chipsEl = document.getElementById("filter-status-chips");
+  if (chipsEl) {
+    const statuses = ["all","wishlist","playing","finished","paused","dropped"];
+    chipsEl.innerHTML = statuses.map(s => {
+      const label = s === "all" ? "Tous" : STATUS_LABELS[s];
+      return `<button class="filter-chip ${State.filters.status === s ? "active" : ""}"
+                      onclick="UI.setStatusChip('${s}')">${label}</button>`;
+    }).join("");
+  }
+  // Met à jour le label actif sur le bouton toggle
+  _updateFilterToggleLabel();
+}
+
+function _updateFilterToggleLabel() {
+  const label = document.getElementById("filter-active-label");
+  if (!label) return;
+  const parts = [];
+  if (State.filters.status !== "all") parts.push(STATUS_LABELS[State.filters.status]);
+  if (State.filters.sort !== "created_at") parts.push({date_finished:"Date fin",rating:"Note",title:"Titre"}[State.filters.sort] || "");
+  label.textContent = parts.length ? ` · ${parts.join(", ")}` : "";
+  const btn = document.getElementById("btn-filter-toggle");
+  if (btn) btn.classList.toggle("has-filter", parts.length > 0);
 }
 
 // ── Rendu grille ──────────────────────────────────────────────
@@ -1361,11 +1389,13 @@ let _chipDebounce = null;
 function setStatusChip(status) {
   State.filters.status = status;
   syncFilterChips();
+  _updateFilterToggleLabel();
   clearTimeout(_chipDebounce);
   _chipDebounce = setTimeout(() => renderCards(), 80);
 }
 function setSort(val) {
   State.filters.sort = val;
+  _updateFilterToggleLabel();
   localStorage.setItem("kulturo-sort", val);
   renderCards();
 }
@@ -2186,6 +2216,14 @@ window.UI = {
   navTo,
   setTypeFilter,
   setStatusChip,
+  toggleFilterDrawer: () => {
+    const drawer = document.getElementById("filter-drawer");
+    if (!drawer) return;
+    const isOpen = drawer.style.display !== "none";
+    drawer.style.display = isOpen ? "none" : "block";
+    const btn = document.getElementById("btn-filter-toggle");
+    if (btn) btn.classList.toggle("open", !isOpen);
+  },
   setSort,
   setProfileYear,
   setDiscoverType,
