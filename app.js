@@ -199,22 +199,6 @@ function renderApp() {
             </button>
           </div>
         </div>
-        <div class="filter-drawer" id="filter-drawer" style="display:none">
-          <div class="filter-drawer-inner">
-            <div class="filter-drawer-section">
-              <span class="filter-drawer-label">Statut</span>
-              <div class="filter-drawer-chips" id="filter-status-chips"></div>
-            </div>
-            <div class="filter-drawer-section">
-              <span class="filter-drawer-label">Trier par</span>
-              <div class="filter-drawer-chips">
-                ${[["created_at","Date d'ajout"],["date_finished","Date de fin"],["rating","Note"],["title","Titre"]].map(([v,l]) =>
-                  `<button class="filter-chip ${State.filters.sort===v?"active":""}" onclick="UI.setSort('${v}')">${l}</button>`
-                ).join("")}
-              </div>
-            </div>
-          </div>
-        </div>
         <div id="cards-grid"></div>
       </section>
 
@@ -1390,12 +1374,28 @@ function setStatusChip(status) {
   State.filters.status = status;
   syncFilterChips();
   _updateFilterToggleLabel();
+  // Met à jour les chips dans la modal filtre si ouverte
+  const fmChips = document.getElementById("fm-status-chips");
+  if (fmChips) {
+    fmChips.querySelectorAll(".filter-chip").forEach(b => {
+      const s = b.getAttribute("onclick").match(/'([^']+)'/)?.[1];
+      b.classList.toggle("active", s === status);
+    });
+  }
   clearTimeout(_chipDebounce);
   _chipDebounce = setTimeout(() => renderCards(), 80);
 }
 function setSort(val) {
   State.filters.sort = val;
   _updateFilterToggleLabel();
+  // Met à jour les chips dans la modal filtre si ouverte
+  const fmChips = document.getElementById("fm-sort-chips");
+  if (fmChips) {
+    fmChips.querySelectorAll(".filter-chip").forEach(b => {
+      const v = b.getAttribute("onclick").match(/'([^']+)'/)?.[1];
+      b.classList.toggle("active", v === val);
+    });
+  }
   localStorage.setItem("kulturo-sort", val);
   renderCards();
 }
@@ -2217,12 +2217,63 @@ window.UI = {
   setTypeFilter,
   setStatusChip,
   toggleFilterDrawer: () => {
-    const drawer = document.getElementById("filter-drawer");
-    if (!drawer) return;
-    const isOpen = drawer.style.display !== "none";
-    drawer.style.display = isOpen ? "none" : "block";
-    const btn = document.getElementById("btn-filter-toggle");
-    if (btn) btn.classList.toggle("open", !isOpen);
+    const root = document.getElementById("modal-root");
+    const statuses = ["all","wishlist","playing","finished","paused","dropped"];
+    const sorts = [["created_at","Date d'ajout"],["date_finished","Date de fin"],["rating","Note"],["title","Titre"]];
+
+    const statusChips = statuses.map(s => {
+      const label = s === "all" ? "Tous" : STATUS_LABELS[s];
+      return `<button class="filter-chip ${State.filters.status === s ? "active" : ""}"
+        onclick="UI.setStatusChip('${s}')">${label}</button>`;
+    }).join("");
+
+    const sortChips = sorts.map(([v, l]) =>
+      `<button class="filter-chip ${State.filters.sort === v ? "active" : ""}"
+        onclick="UI.setSort('${v}')">${l}</button>`
+    ).join("");
+
+    root.insertAdjacentHTML("beforeend", `
+      <div class="modal-overlay filter-modal-overlay" id="filter-modal-overlay" onclick="if(event.target.id==='filter-modal-overlay') UI.closeFilterModal()">
+        <div class="modal filter-modal" role="dialog" aria-modal="true">
+          <div class="modal-header">
+            <h3>Filtres</h3>
+            <button class="btn-icon" onclick="UI.closeFilterModal()">${iconX()}</button>
+          </div>
+          <div class="modal-body">
+            <div class="filter-modal-section">
+              <div class="filter-modal-label">Statut</div>
+              <div class="filter-modal-chips" id="fm-status-chips">${statusChips}</div>
+            </div>
+            <div class="filter-modal-section">
+              <div class="filter-modal-label">Trier par</div>
+              <div class="filter-modal-chips" id="fm-sort-chips">${sortChips}</div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="UI.resetFilters()">Réinitialiser</button>
+            <button class="btn btn-primary" onclick="UI.closeFilterModal()">Appliquer ✓</button>
+          </div>
+        </div>
+      </div>`);
+  },
+
+  closeFilterModal: () => {
+    const overlay = document.getElementById("filter-modal-overlay");
+    if (!overlay) return;
+    overlay.style.transition = "opacity .2s ease";
+    overlay.style.opacity = "0";
+    const modal = overlay.querySelector(".modal");
+    if (modal) { modal.style.transition = "opacity .2s ease, transform .2s ease"; modal.style.opacity = "0"; modal.style.transform = "translateY(10px)"; }
+    setTimeout(() => overlay.remove(), 200);
+  },
+
+  resetFilters: () => {
+    State.filters.status = "all";
+    State.filters.sort = "created_at";
+    renderCards();
+    buildFilterBar();
+    _updateFilterToggleLabel();
+    UI.closeFilterModal();
   },
   setSort,
   setProfileYear,
