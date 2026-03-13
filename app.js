@@ -1068,8 +1068,7 @@ async function saveEntry() {
   window._apiSelected = null;
   _currentRating = 0;
 
-  try {
-    if (DiscoverState.loading) return;
+  if (DiscoverState.loading) return;
   DiscoverState.loading = true;
 
   grid.innerHTML = `<div class="discover-loading"><div class="spinner"></div><span>Analyse de vos goûts avec l'IA…</span></div>`;
@@ -1202,8 +1201,7 @@ async function addToWishlist(idx) {
     notes:       null,
     platform:    it.platform  || null,
   };
-  try {
-  
+
   // Retire la carte par son index data-attribute
   const card = grid.querySelector(`[data-discover-idx="${idx}"]`);
   if (card) {
