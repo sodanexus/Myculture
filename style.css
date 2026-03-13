@@ -2642,7 +2642,6 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   align-items: center;
   gap: .5rem;
   padding: .4rem var(--content-px);
-  border-bottom: 1px solid var(--border);
   overflow: hidden;
 }
 .filter-bar .category-tabs {
