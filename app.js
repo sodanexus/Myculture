@@ -247,14 +247,14 @@ function renderApp() {
       <button class="bottom-nav-item active" data-nav="library" onclick="UI.navTo('library')" title="Bibliothèque">
         ${iconGrid()}
       </button>
-      <button class="bottom-nav-item" data-nav="activity" onclick="UI.navTo('activity')" title="Activité">
-        ${iconActivity()}
+      <button class="bottom-nav-item" data-nav="discover" onclick="UI.navTo('discover')" title="Découverte">
+        ${iconCompass()}
       </button>
       <button class="bottom-nav-item bottom-nav-add" onclick="UI.openAddModal()" title="Ajouter">
         ${iconPlus()}
       </button>
-      <button class="bottom-nav-item" data-nav="discover" onclick="UI.navTo('discover')" title="Découverte">
-        ${iconCompass()}
+      <button class="bottom-nav-item" data-nav="activity" onclick="UI.navTo('activity')" title="Activité">
+        ${iconActivity()}
       </button>
       <button class="bottom-nav-item" data-nav="dashboard" onclick="UI.navTo('dashboard')" title="Mon profil">
         ${iconUser()}
