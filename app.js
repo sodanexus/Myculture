@@ -776,26 +776,19 @@ function openModal(entry = null, prefillTitle = null) {
           <button class="btn-icon" onclick="UI.closeModal()">${iconX()}</button>
         </div>
         <div class="modal-body">
-          <!-- Recherche API -->
-          <div class="form-group">
-            <label>Catégorie *</label>
-            <select id="f-type" onchange="UI.onTypeChange()">
-              <option value="game"  ${entry?.media_type==="game" ?"selected":""}>🎮 Jeu vidéo</option>
-              <option value="movie" ${entry?.media_type==="movie"?"selected":""}>🎬 Film / Série</option>
-              <option value="book"  ${entry?.media_type==="book" ?"selected":""}>📚 Livre</option>
-            </select>
-          </div>
-          <div class="form-group" id="api-search-group">
-            <label>Recherche automatique <span style="color:var(--text-3);font-weight:400" id="api-avail-label"></span></label>
+          <!-- Recherche unifiée -->
+          <div class="form-group modal-search-unified">
+            <div class="modal-type-tabs">
+              <button type="button" class="modal-type-tab ${!entry || entry?.media_type==="movie" ? "active" : ""}" data-type="movie" onclick="UI.setModalType('movie')">🎬 Film</button>
+              <button type="button" class="modal-type-tab ${entry?.media_type==="game" ? "active" : ""}" data-type="game" onclick="UI.setModalType('game')">🎮 Jeu</button>
+              <button type="button" class="modal-type-tab ${entry?.media_type==="book" ? "active" : ""}" data-type="book" onclick="UI.setModalType('book')">📚 Livre</button>
+            </div>
             <div class="api-search-wrap">
-              <input type="text" id="f-api-search" placeholder="Chercher un titre…" autocomplete="off" />
+              <input type="text" id="f-api-search" placeholder="Rechercher ou saisir un titre…" autocomplete="off" value="${esc(entry?.title||prefillTitle||"")}" />
               <div class="api-results" id="api-results" style="display:none"></div>
             </div>
-          </div>
-          <!-- Champs -->
-          <div class="form-group">
-            <label>Titre *</label>
-            <input type="text" id="f-title" value="${esc(entry?.title||"")}" placeholder="Titre du média" />
+            <input type="hidden" id="f-type" value="${entry?.media_type || 'movie'}" />
+            <input type="hidden" id="f-title" value="${esc(entry?.title||"")}" />
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -865,7 +858,7 @@ function openModal(entry = null, prefillTitle = null) {
   // API search listener
   setupApiSearch();
   // Auto-focus
-  setTimeout(() => document.getElementById("f-title")?.focus(), 100);
+  setTimeout(() => document.getElementById("f-api-search")?.focus(), 100);
 }
 
 const RATING_LABELS = {
@@ -1003,7 +996,11 @@ function setupApiSearch() {
 function fillFromApi(idx) {
   const it = window._apiResults?.[idx];
   if (!it) return;
-  const set = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+  const set = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined && v !== null) el.value = v; };
+  // Champ unifié — affiche le titre sélectionné dans le search input
+  const searchInput = document.getElementById("f-api-search");
+  if (searchInput) searchInput.value = it.title;
+  // Stocke le titre dans le hidden
   set("f-title",  it.title);
   set("f-cover",  it.cover_url);
   set("f-genre",  it.genre);
@@ -1012,12 +1009,19 @@ function fillFromApi(idx) {
   // Stocke pour sauvegarde
   window._apiSelected = it;
   document.getElementById("api-results").style.display = "none";
-  document.getElementById("f-api-search").value = "";
+  // Ouvre les infos avancées si cover/genre remplis
+  if (it.cover_url || it.genre) {
+    const details = document.querySelector(".advanced-details");
+    if (details) details.open = true;
+  }
 }
 
 // ── CRUD ──────────────────────────────────────────────────────
 async function saveEntry() {
-  const title = document.getElementById("f-title")?.value?.trim();
+  // Si f-title vide (pas de sélection API), on prend ce qui est tapé dans la recherche
+  const titleHidden = document.getElementById("f-title")?.value?.trim();
+  const titleSearch = document.getElementById("f-api-search")?.value?.trim();
+  const title = titleHidden || titleSearch;
   if (!title) { toast("Le titre est obligatoire.", "error"); return; }
 
   // #7 — protection double-submit
@@ -2014,6 +2018,17 @@ window.UI = {
   showRatingLabel,
   hideRatingLabel,
   onTypeChange:    () => { const t = document.getElementById("f-type")?.value; updateApiAvailLabel(t); },
+  setModalType: (type) => {
+    const hidden = document.getElementById("f-type");
+    if (hidden) hidden.value = type;
+    document.querySelectorAll(".modal-type-tab").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.type === type);
+    });
+    updateApiAvailLabel(type);
+    // Relance la recherche avec le nouveau type
+    const q = document.getElementById("f-api-search")?.value?.trim();
+    if (q && q.length >= 2) setupApiSearch._trigger?.();
+  },
   switchAuthTab:   (tab) => {
     document.querySelectorAll(".auth-tab").forEach(b => b.classList.toggle("active", b.id === `tab-${tab}`));
     const btn = document.querySelector("#auth-form button[onclick]");
