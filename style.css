@@ -951,9 +951,28 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
 
 /* ── Discover reason (Groq) ───────────────────────────────── */
 .discover-reason {
+  display: flex;
+  align-items: flex-start;
+  gap: .3rem;
   font-size: .72rem;
+  color: var(--text-2);
+  margin-top: .5rem;
+  line-height: 1.45;
+  background: rgba(200,169,110,.08);
+  border-left: 2px solid var(--accent);
+  padding: .3rem .45rem;
+  border-radius: 0 4px 4px 0;
+}
+.discover-reason-icon {
   color: var(--accent);
-  margin-top: .4rem;
+  flex-shrink: 0;
+  font-size: .7rem;
+  margin-top: .05rem;
+}
+.discover-desc {
+  font-size: .72rem;
+  color: var(--text-3);
+  margin-top: .35rem;
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
