@@ -1627,9 +1627,9 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   padding: .6rem .85rem;
   cursor: pointer;
   border-bottom: 1px solid var(--border);
-  transition: background var(--transition);
+  transition: background .15s ease, transform .15s ease;
 }
-.quick-result:hover { background: var(--bg-3); }
+.quick-result:hover { background: var(--bg-3); transform: translateX(3px); }
 .quick-thumb {
   width: 32px; height: 44px;
   object-fit: cover;
@@ -1836,6 +1836,7 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
     stroke-width: 1.8;
   }
   .bottom-nav-item:active { transform: scale(.85); }
+  .bottom-nav-item { transition: color .2s ease, transform .15s ease; }
   .bottom-nav-item.active { color: var(--accent); }
   .bottom-nav-item.active svg { stroke: var(--accent); }
 
@@ -2524,8 +2525,8 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   transition: all .15s;
   color: var(--text-2);
 }
-.wz-type-btn:hover { border-color: var(--accent); color: var(--accent); }
-.wz-type-btn.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+.wz-type-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+.wz-type-btn.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); transform: translateY(-2px); }
 .wz-type-icon { font-size: 2rem; line-height: 1; }
 .wz-type-label { font-size: .8rem; font-weight: 600; }
 
@@ -2577,7 +2578,8 @@ details[open] .advanced-summary::before { transform: rotate(90deg); }
   transition: all .15s;
 }
 .wz-status-btn:hover  { border-color: var(--accent); color: var(--accent); }
-.wz-status-btn.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-weight: 600; }
+.wz-status-btn.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-weight: 600; animation: statusPop .2s ease; }
+@keyframes statusPop { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }
 
 .wz-body {
   animation: wzStepIn .25s cubic-bezier(.4,0,.2,1) both;
