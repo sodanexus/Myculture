@@ -1,46 +1,204 @@
-# 🎭 Kulturo
-> Journal culturel personnel — suivez vos jeux, films et livres.
+# Kulturo — Journal culturel personnel
+
+> Suis tes jeux, films, séries et livres. Enrichissement automatique via les APIs, recommandations personnalisées par l'IA, fil d'activité partagé entre utilisateurs.
+
+![GitHub Pages](https://img.shields.io/badge/hébergement-GitHub%20Pages-black) ![Supabase](https://img.shields.io/badge/base%20de%20données-Supabase-3ECF8E) ![Groq](https://img.shields.io/badge/IA-Groq-F55036) ![TMDb](https://img.shields.io/badge/films-TMDb-01B4E4) ![IGDB](https://img.shields.io/badge/jeux-IGDB-9146FF)
+
+---
+
+## Ce que ça fait
+
+- 🎮 **Catalogue jeux, films, séries et livres** — recherche via IGDB, TMDb et Open Library
+- ⭐ **Notation demi-étoiles** — swipe mobile, coups de cœur avec animation dorée
+- 🤖 **Recommandations IA personnalisées** — basées sur tes coups de cœur et meilleures notes
+- 🌍 **Descriptions traduites en français** — automatiquement via Groq pour les jeux et livres
+- 📊 **Dashboard personnel** — stats, progression, journal des médias terminés
+- 👥 **Fil d'activité partagé** — voir ce que les autres utilisateurs ajoutent
+- 📱 **PWA installable** — iOS et Android, fonctionne hors ligne
+
+---
 
 ## Stack
-- **Frontend** — HTML / CSS / JavaScript vanilla (SPA)
-- **Backend** — Supabase (Auth + PostgreSQL + RLS + Edge Functions)
-- **APIs** — TMDb · IGDB (via Edge Function) · OpenLibrary · Groq (IA, via Edge Function)
-- **Hébergement** — GitHub Pages
 
-## Fonctionnalités
+| Couche | Techno |
+|---|---|
+| Frontend | HTML + CSS + JS vanilla (SPA, zéro dépendance) |
+| Auth & DB | Supabase (Auth + PostgreSQL + RLS) |
+| Edge Functions | Supabase Edge Functions (Deno) — proxy IGDB + relay Groq |
+| Films & Séries | TMDb API |
+| Jeux vidéo | IGDB API (via Twitch) |
+| Livres | Open Library API (sans clé) |
+| IA | Groq — `llama-3.3-70b-versatile` (recommandations) · `llama3-8b-8192` (traductions) |
+| Hébergement | GitHub Pages |
+
+---
+
+## Structure du projet
+
+```
+kulturo/
+├── index.html                          # Shell de l'app
+├── style.css                           # Design complet
+├── app.js                              # Logique principale (SPA)
+├── api.js                              # Clients TMDb, IGDB, Open Library
+├── supabase.js                         # Auth, Media, Stats, Profiles, Activity
+├── config.js                           # Clés API — ne pas committer (voir .gitignore)
+├── sw.js                               # Service Worker (cache + offline)
+├── schema.sql                          # Schéma Supabase à exécuter
+├── manifest.json                       # PWA manifest
+├── icon.svg / icon-192.png / icon-512.png
+└── supabase/functions/
+    └── igdb-proxy/index.ts             # Edge Function — IGDB + traduction Groq
+```
+
+> ⚠️ `config.js` est dans `.gitignore`. Ne jamais committer les clés API.
+
+---
+
+## Déploiement
+
+### 1. Supabase
+
+1. Créer un projet sur [supabase.com](https://supabase.com)
+2. **SQL Editor** → coller et exécuter `schema.sql`
+3. **Settings > API** → noter `Project URL` et `anon public key`
+
+#### Déployer les Edge Functions
+
+```bash
+supabase functions deploy igdb-proxy
+```
+
+Ajouter les secrets dans **Settings > Edge Functions** :
+
+| Secret | Valeur |
+|---|---|
+| `IGDB_CLIENT_ID` | Client ID depuis [dev.twitch.tv](https://dev.twitch.tv/console) |
+| `IGDB_CLIENT_SECRET` | Client Secret Twitch |
+| `GROQ_API_KEY` | Clé depuis [console.groq.com](https://console.groq.com) |
+
+> La Edge Function `groq-proxy` gère aussi les recommandations IA — déployer les deux.
+
+---
+
+### 2. Configurer config.js
+
+Copier `config.js` et remplir les valeurs :
+
+```js
+const CONFIG = {
+  supabase: {
+    url:     'https://VOTRE_PROJET.supabase.co',
+    anonKey: 'VOTRE_ANON_KEY',
+  },
+  tmdb: {
+    apiKey:    'VOTRE_CLE_TMDB',        // themoviedb.org/settings/api
+    baseUrl:   'https://api.themoviedb.org/3',
+    imageBase: 'https://image.tmdb.org/t/p/w500',
+  },
+  igdb: {
+    clientId:     'VOTRE_CLIENT_ID',    // dev.twitch.tv/console
+    clientSecret: 'VOTRE_SECRET',
+  },
+  openLibrary: {
+    baseUrl:   'https://openlibrary.org',
+    coverBase: 'https://covers.openlibrary.org/b/id',
+  },
+  app: {
+    name:         'Kulturo',
+    defaultTheme: 'dark',   // "dark" | "light"
+    itemsPerPage: 24,
+  },
+};
+```
+
+---
+
+### 3. GitHub Pages
+
+1. Créer un repo GitHub et pousser tous les fichiers à la racine
+2. **Settings > Pages** → branche `main`, dossier `/`
+3. L'app est accessible sur `https://VOTRE_USERNAME.github.io/kulturo`
+
+---
+
+### 4. Installer sur mobile (PWA)
+
+**iPhone** — Safari → ouvrir le site → bouton partage **↑** → **"Sur l'écran d'accueil"**
+
+**Android** — Chrome → menu ⋮ → **"Ajouter à l'écran d'accueil"**
+
+---
+
+## Fonctionnalités détaillées
 
 ### Bibliothèque
-- Grille avec filtres, tri, recherche
-- États visuels par statut (wishlist, en cours, en pause, abandonné) avec label overlay
-- Notation demi-étoiles (swipe mobile)
+- Grille avec filtres par type (jeux / films / séries / livres), statut, favoris et recherche
+- Tri par date d'ajout, note, titre ou date de fin
+- Statuts : Wishlist · En cours · Terminé · En pause · Abandonné
+- Notation demi-étoiles (1–10 en incréments de 0.5), swipe mobile
 - Coups de cœur avec animation dorée
+- Mémorisation de la position de scroll et des filtres entre pages
 
 ### Fiche détail enrichie
 - Backdrop TMDb en fondu pour films & séries
 - Poster flouté en fallback pour jeux & livres
-- Informations enrichies : réalisateur, casting, durée, saisons, développeur, éditeur, plateformes, pages, ISBN
+- Métadonnées complètes : réalisateur, casting, durée, saisons, développeur, éditeur, plateformes, pages, ISBN
 - Synopsis tronqué avec "Voir plus" sur mobile
-- Descriptions traduites en français via Groq (jeux + livres)
+- Descriptions jeux et livres traduites en français via Groq
+- Saisie manuelle possible si l'API ne retourne rien
 
-### Découverte IA
-- Recommandations personnalisées via Groq (`llama-3.3-70b-versatile`)
-- Basées sur coups de cœur + meilleures notes
-- Diversité forcée entre types (jeux / films / livres)
-- Suggestions de niche, exclut les titres déjà en bibliothèque
-- Raisons personnalisées affichées sur chaque carte
+### Recommandations IA (page Découverte)
+- Suggestions personnalisées via Groq (`llama-3.3-70b-versatile`) basées sur les coups de cœur et meilleures notes
+- Diversité forcée entre les types de médias
+- Suggestions de niche uniquement — les titres déjà en bibliothèque sont exclus
+- Raison personnalisée affichée sur chaque carte
+- Fallback par genres/auteurs si Groq est indisponible
+
+### Dashboard
+- Statistiques personnelles (totaux par type, par statut, temps estimé)
+- Journal des médias terminés avec dates
+- Graphe d'activité mensuelle
+
+### Fil d'activité
+- Activité en temps réel de tous les utilisateurs
+- Filtrable pour n'afficher que son propre historique
 
 ### Sécurité
-- Clé Groq stockée uniquement dans les secrets Supabase (Edge Function `groq-proxy`)
-- Clés IGDB idem via Edge Function `igdb-proxy`
-- `config.js` non commité (`.gitignore`)
+- Clés Groq et IGDB stockées uniquement dans les secrets Supabase (Edge Functions)
+- `config.js` exclu du repo via `.gitignore`
+- Row Level Security — chaque utilisateur ne voit que ses propres données
+- Tout le HTML est échappé côté client
 
-### Stats & Activité
-- Dashboard avec statistiques personnelles
-- Fil d'activité partagé entre utilisateurs
-- Journal des médias terminés
+---
 
-### UX / Mobile
-- PWA installable (iOS / Android)
-- Thème dark / light
-- Modal détail avec animations
-- Navigation bottom bar mobile
+## Base de données
+
+Table principale `media_entries` :
+
+| Colonne | Type | Description |
+|---|---|---|
+| `media_type` | TEXT | `game` · `movie` · `book` |
+| `status` | TEXT | `wishlist` · `playing` · `finished` · `paused` · `dropped` |
+| `rating` | SMALLINT | 1–10 (demi-étoiles × 2) |
+| `is_favorite` | BOOLEAN | Coup de cœur |
+| `external_id` | TEXT | ID TMDb / IGDB / OpenLibrary |
+| `source_api` | TEXT | `tmdb` · `rawg` · `openlibrary` · `manual` |
+| `author` | TEXT | Auteur (livres) · Studio (jeux) · Réalisateur (films) |
+
+RLS activée — policies `SELECT / INSERT / UPDATE / DELETE` restreintes à `auth.uid() = user_id`.
+
+---
+
+## Notes techniques
+
+**Rate limits API (plans gratuits)**
+- TMDb : 50 requêtes / seconde
+- IGDB : 4 requêtes / seconde
+- Open Library : pas de limite officielle
+- Groq `llama-3.3-70b-versatile` : 1 000 req/jour · `llama3-8b-8192` : 14 400 req/jour
+
+**Service Worker**
+- Network-first pour HTML / JS / CSS (toujours à jour)
+- Cache-first pour images et fonts (performances)
+- Fallback `index.html` en cas d'erreur réseau
